@@ -1,0 +1,17 @@
+-- Run once as superuser. Replace <APP_PASSWORD> before executing.
+CREATE ROLE epicevents_app WITH LOGIN PASSWORD '<APP_PASSWORD>';
+
+REVOKE CONNECT ON DATABASE postgres from public;
+REVOKE CONNECT ON DATABASE epicevents from public;
+
+GRANT CONNECT ON DATABASE epicevents TO epicevents_app;
+
+GRANT USAGE, CREATE ON SCHEMA public TO epicevents_app;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO epicevents_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO epicevents_app;
+
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO epicevents_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT USAGE, SELECT ON SEQUENCES TO epicevents_app;
