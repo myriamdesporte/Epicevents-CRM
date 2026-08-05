@@ -4,6 +4,7 @@ from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from epicevents.models.base import ModelBase
+from epicevents.security import hash_password, verify_password
 
 if TYPE_CHECKING:
     from epicevents.models.client import Client
@@ -36,6 +37,14 @@ class User(ModelBase):
     assigned_events: Mapped[list["Event"]] = relationship(
         back_populates="support_contact"
     )
+
+    def set_password(self, password: str) -> None:
+        """Hash a plaintext password and store the hash."""
+        self.password_hash = hash_password(password)
+
+    def check_password(self, password: str) -> bool:
+        """Tell whether the given plaintext password matches the stored hash."""
+        return verify_password(self.password_hash, password)
 
     def __repr__(self) -> str:
         return (
