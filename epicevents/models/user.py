@@ -8,7 +8,6 @@ from epicevents.security import hash_password, verify_password
 
 if TYPE_CHECKING:
     from epicevents.models.client import Client
-    from epicevents.models.contract import Contract
     from epicevents.models.event import Event
     from epicevents.models.role import Role
 
@@ -29,9 +28,6 @@ class User(ModelBase):
     # Relationships
     role: Mapped["Role"] = relationship(back_populates="users")
     managed_clients: Mapped[list["Client"]] = relationship(
-        back_populates="sales_contact"
-    )
-    managed_contracts: Mapped[list["Contract"]] = relationship(
         back_populates="sales_contact"
     )
     assigned_events: Mapped[list["Event"]] = relationship(

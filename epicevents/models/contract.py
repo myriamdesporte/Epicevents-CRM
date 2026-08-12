@@ -9,7 +9,6 @@ from epicevents.models.base import ModelBase
 if TYPE_CHECKING:
     from epicevents.models.client import Client
     from epicevents.models.event import Event
-    from epicevents.models.user import User
 
 
 class Contract(ModelBase):
@@ -22,13 +21,11 @@ class Contract(ModelBase):
 
     is_signed: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    # Foreign keys
+    # Foreign key
     client_id: Mapped[int] = mapped_column(ForeignKey("clients.id"))
-    sales_contact_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
     # Relationships
     client: Mapped["Client"] = relationship(back_populates="contracts")
-    sales_contact: Mapped["User"] = relationship(back_populates="managed_contracts")
 
     event: Mapped[Optional["Event"]] = relationship(back_populates="contract")
 
