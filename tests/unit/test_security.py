@@ -1,6 +1,8 @@
 """Tests for password hashing."""
 
-from epicevents.security import hash_password, verify_password
+from argon2 import PasswordHasher
+
+from epicevents.security import hash_password, verify_password, needs_rehash
 
 PASSWORD = "DummyPassword42!"
 
@@ -33,6 +35,23 @@ def test_verify_rejects_a_wrong_password():
 def test_verify_rejects_an_empty_password():
     """verify_password must reject an empty password like any other wrong one."""
     assert verify_password(hash_password(PASSWORD), "") is False
+
+
+def test_a_fresh_hash_does_not_need_rehashing():
+    """A hash just produced already uses the current cost parameters."""
+    assert needs_rehash(hash_password(PASSWORD)) is False
+
+
+def test_needs_rehash_is_true_for_outdated_parameters():
+    """A hash made with weaker (outdated) cost parameters should be flagged."""
+    weak_hasher = PasswordHasher(time_cost=1, memory_cost=8, parallelism=1)
+    outdated_hash = weak_hasher.hash(PASSWORD)
+    assert needs_rehash(outdated_hash) is True
+
+
+def test_needs_rehash_is_false_for_a_malformed_hash():
+    """No crash on a corrupted row: the login path must stay robust."""
+    assert needs_rehash("not-an-argon2-hash") is False
 
 
 def test_verify_rejects_a_malformed_hash():
