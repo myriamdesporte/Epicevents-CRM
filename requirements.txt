@@ -4,6 +4,8 @@ psycopg2-binary==2.9.12
 python-dotenv==1.2.2
 argon2-cffi==25.1.0
 PyJWT==2.13.0
+click==8.4.2
+rich==15.0.0
 
 # Dev tools
 black==26.5.1
