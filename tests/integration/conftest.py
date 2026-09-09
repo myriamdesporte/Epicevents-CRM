@@ -1,12 +1,15 @@
 """Fixtures shared by the test suite."""
 
+from datetime import timezone, datetime
+from decimal import Decimal
+
 import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from epicevents import auth, database
 from epicevents.database import Base
-from epicevents.models import Role, RoleName, User
+from epicevents.models import Role, RoleName, User, Contract, Event, Client
 
 PASSWORD = "DummyPassword42!"
 
@@ -84,6 +87,64 @@ def management_user(session):
         "EE-003",
         "Albert Management",
     )
+
+
+def create_client(session, sales_contact, full_name="Kevin Casey") -> Client:
+    """Add a client followed by the given sales collaborator."""
+    client = Client(
+        full_name=full_name,
+        email=f"{full_name.split()[0].lower()}@startup.io",
+        phone="+678 123 456 78",
+        company_name="Cool Startup LLC",
+        sales_contact_id=sales_contact.id,
+    )
+    session.add(client)
+    session.commit()
+    return client
+
+
+def create_contract(
+    session, client, total=Decimal("1000.00"), due=Decimal("400.00"), signed=True
+) -> Contract:
+    """Add a contract for the given client."""
+    contract = Contract(
+        total_amount=total,
+        amount_due=due,
+        is_signed=signed,
+        client_id=client.id,
+    )
+    session.add(contract)
+    session.commit()
+    return contract
+
+
+def create_event(session, contract, support_contact=None, name="Wedding") -> Event:
+    """Add an event for the given contract, with or without a support contact."""
+    event = Event(
+        name=name,
+        start_date=datetime(2026, 6, 4, 13, 0, tzinfo=timezone.utc),
+        end_date=datetime(2026, 6, 5, 2, 0, tzinfo=timezone.utc),
+        location="53 Rue du Chateau, Cande-sur-Beuvron",
+        attendees=75,
+        notes=None,
+        contract_id=contract.id,
+        support_contact_id=support_contact.id if support_contact else None,
+    )
+    session.add(event)
+    session.commit()
+    return event
+
+
+@pytest.fixture
+def client(session, sales_user):
+    """A client followed by the sales collaborator."""
+    return create_client(session, sales_user)
+
+
+@pytest.fixture
+def signed_contract(session, client):
+    """A signed contract, partially paid."""
+    return create_contract(session, client)
 
 
 @pytest.fixture(autouse=True)
