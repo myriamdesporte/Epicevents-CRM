@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from epicevents import auth
+from epicevents import auth, database
 from epicevents.database import Base
 from epicevents.models import Role, RoleName, User
 
@@ -12,19 +12,33 @@ PASSWORD = "DummyPassword42!"
 
 
 @pytest.fixture
-def session():
-    """Yield a session on a fresh database already holding the three roles."""
+def engine():
+    """Create a fresh in-memory test database with the three roles already in it."""
     engine = create_engine("sqlite://")
     Base.metadata.create_all(engine)
-    factory = sessionmaker(bind=engine)
+
+    with sessionmaker(bind=engine)() as session:
+        for role_name in RoleName:
+            session.add(Role(name=role_name))
+        session.commit()
+
     try:
-        with factory() as session:
-            for role_name in RoleName:
-                session.add(Role(name=role_name))
-            session.commit()
-            yield session
+        yield engine
     finally:
         engine.dispose()
+
+
+@pytest.fixture
+def session(engine):
+    """Give a test a session to read and write in the test database."""
+    with sessionmaker(bind=engine)() as session:
+        yield session
+
+
+@pytest.fixture
+def cli_database(engine, monkeypatch):
+    """Make the CLI commands use the test database instead of the real one."""
+    monkeypatch.setattr(database, "Session", sessionmaker(bind=engine))
 
 
 def create_user(
