@@ -27,3 +27,16 @@ class EventRepository(BaseRepository):
             self._select().where(Event.support_contact_id == user_id).order_by(Event.id)
         )
         return list(self.session.scalars(query))
+
+    def list_filtered(
+        self, *, no_support: bool = False, support_contact_id: int | None = None
+    ):
+        """Return the events matching all the given criteria at once."""
+        query = self._select()
+
+        if no_support:
+            query = query.where(Event.support_contact_id.is_(None))
+        if support_contact_id is not None:
+            query = query.where(Event.support_contact_id == support_contact_id)
+
+        return list(self.session.scalars(query))

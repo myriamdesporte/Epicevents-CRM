@@ -36,3 +36,24 @@ class ContractRepository(BaseRepository):
             .order_by(Contract.id)
         )
         return list(self.session.scalars(query))
+
+    def list_filtered(
+        self,
+        *,
+        unsigned: bool = False,
+        unpaid: bool = False,
+        sales_contact_id: int | None = None
+    ):
+        """Return the contracts matching all the given criteria at once."""
+        query = self._select()
+
+        if unsigned:
+            query = query.where(Contract.is_signed.is_(False))
+        if unpaid:
+            query = query.where(Contract.amount_due > 0)
+        if sales_contact_id is not None:
+            query = query.join(Contract.client).where(
+                Client.sales_contact_id == sales_contact_id
+            )
+
+        return list(self.session.scalars(query))

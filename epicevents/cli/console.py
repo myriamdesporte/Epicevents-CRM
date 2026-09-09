@@ -18,6 +18,24 @@ def print_error(message: str) -> None:
     error_console.print(f"[red]✗[/red] {message}")
 
 
+def print_info(message: str) -> None:
+    """Report something neutral, such as an empty result."""
+    console.print(message)
+
+
+def print_table(title: str, columns: tuple[str, ...], rows: list[tuple]) -> None:
+    """Display rows under the given column headers."""
+    table = Table(title=title, box=box.SIMPLE_HEAD)
+
+    for column in columns:
+        table.add_column(column)
+
+    for row in rows:
+        table.add_row(*row)
+
+    console.print(table)
+
+
 def print_details(title: str, rows: dict[str, str]) -> None:
     """Display a set of field and value pairs as a table."""
     table = Table(title=title, show_header=False, box=box.SQUARE)
