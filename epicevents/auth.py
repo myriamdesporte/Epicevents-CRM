@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import jwt
-from sqlalchemy import select
 from sqlalchemy.orm import Session as SessionType
 
 from epicevents.config import JWT_SECRET
@@ -17,6 +16,7 @@ from epicevents.exceptions import (
 )
 from epicevents.models import User
 from epicevents.permissions import Permission, has_permission
+from epicevents.repositories import UserRepository
 from epicevents.security import hash_password, needs_rehash
 
 TOKEN_LIFETIME = timedelta(hours=10)
@@ -51,7 +51,7 @@ def authenticate(session: SessionType, email: str, password: str) -> User:
     """Return the collaborator matching an email and password pair.
     Raises InvalidCredentialsError if either is wrong.
     """
-    user = session.scalar(select(User).where(User.email == email))
+    user = UserRepository(session).get_by_email(email)
 
     if user is None:
         hash_password(password)
@@ -129,7 +129,7 @@ def get_current_user(session: SessionType) -> User:
     if token is None:
         raise AuthenticationError("Not logged in: run the login command first.")
 
-    user: User | None = session.get(User, read_token(token))
+    user: User | None = UserRepository(session).get(read_token(token))
     if user is None:
         raise InvalidTokenError("This session refers to a deleted collaborator.")
 
