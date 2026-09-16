@@ -16,7 +16,17 @@ DATETIME_EXAMPLE = "2026-06-04 13:00"
 
 
 class ValidationError(Exception):
-    """Raised when a value entered by a collaborator cannot be accepted."""
+    """Raised when what the collaborator asked for cannot be accepted."""
+
+
+def validate_changes(changes: dict, validators: dict) -> dict:
+    """Return the changes with each value passed through its own validator."""
+    refused = set(changes) - set(validators)
+
+    if refused:
+        raise ValidationError(f"Cannot be changed: {', '.join(sorted(refused))}.")
+
+    return {field: validators[field](value) for field, value in changes.items()}
 
 
 def validate_required_text(value: str, *, field: str, max_length: int) -> str:
