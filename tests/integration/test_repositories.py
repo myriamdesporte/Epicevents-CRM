@@ -2,6 +2,10 @@
 
 from decimal import Decimal
 
+
+import pytest
+from sqlalchemy.exc import IntegrityError
+
 from epicevents.repositories import (
     ClientRepository,
     ContractRepository,
@@ -156,3 +160,83 @@ def test_event_carries_its_contract_and_client(session, signed_contract, client)
     found = EventRepository(session).get(event.id)
 
     assert found.contract.client.full_name == client.full_name
+
+
+# --------------------------------------------------------------------------
+# Writing
+# --------------------------------------------------------------------------
+
+
+def test_add_saves_the_object(session, sales_user):
+    """Creates the object and makes it retrievable from the database."""
+    repository = ClientRepository(session)
+
+    created = repository.add(
+        full_name="Kevin Casey",
+        email="kevin@startup.io",
+        phone="+678 123 456 78",
+        company_name="Cool Startup LLC",
+        sales_contact_id=sales_user.id,
+    )
+
+    assert created.id is not None
+    assert repository.get(created.id).full_name == "Kevin Casey"
+
+
+def test_add_refuses_a_field_that_is_not_a_column(session, sales_user):
+    """Refuses unknown fields when creating an object."""
+    with pytest.raises(TypeError):
+        ClientRepository(session).add(
+            full_name="Kevin Casey",
+            phonee="+678 123 456 78",
+            sales_contact_id=sales_user.id,
+        )
+
+
+def test_update_changes_only_the_given_fields(session, client):
+    """Updates only the fields explicitly provided."""
+    repository = ClientRepository(session)
+    company_before = client.company_name
+
+    repository.update(client, phone="+33 6 12 34 56 78")
+
+    assert client.phone == "+33 6 12 34 56 78"
+    assert client.company_name == company_before
+
+
+def test_update_refuses_a_field_that_is_not_a_column(session, client):
+    """Refuses unknown fields when updating an existing object."""
+    with pytest.raises(ValueError, match="phonee"):
+        ClientRepository(session).update(client, phonee="+33 6 12 34 56 78")
+
+
+@pytest.mark.parametrize("field", ["id", "created_at", "updated_at"])
+def test_update_refuses_the_protected_fields(session, client, field):
+    """Refuses fields that must be managed automatically or remain unchanged."""
+    with pytest.raises(ValueError, match=field):
+        ClientRepository(session).update(client, **{field: 1})
+
+
+def test_update_refreshes_the_last_update_date(session, client):
+    """Automatically updates the last modification date."""
+    before = client.updated_at
+
+    ClientRepository(session).update(client, phone="+33 6 12 34 56 78")
+
+    assert client.updated_at > before
+
+
+def test_delete_removes_the_object(session, signed_contract):
+    """Deletes the object from the database."""
+    repository = ContractRepository(session)
+    contract_id = signed_contract.id
+
+    repository.delete(signed_contract)
+
+    assert repository.get(contract_id) is None
+
+
+def test_delete_is_refused_while_another_row_points_at_it(session, sales_user, client):
+    """Refuses deletion when another object still references it."""
+    with pytest.raises(IntegrityError):
+        UserRepository(session).delete(sales_user)
