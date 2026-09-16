@@ -4,7 +4,7 @@ from datetime import timezone, datetime
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, event
 from sqlalchemy.orm import sessionmaker
 
 from epicevents import database
@@ -19,6 +19,11 @@ PASSWORD = "DummyPassword42!"
 def engine():
     """Create a fresh in-memory test database with the three roles already in it."""
     engine = create_engine("sqlite://")
+
+    @event.listens_for(engine, "connect")
+    def enforce_foreign_keys(dbapi_connection, connection_record):
+        dbapi_connection.execute("PRAGMA foreign_keys=ON")
+
     Base.metadata.create_all(engine)
 
     with sessionmaker(bind=engine)() as session:
