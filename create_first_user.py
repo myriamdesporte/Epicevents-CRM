@@ -7,29 +7,38 @@ from sqlalchemy import select
 
 from epicevents.database import Session
 from epicevents.models import Role, RoleName, User
+from epicevents.validators import (
+    ValidationError,
+    validate_password,
+    validate_required_text,
+    validate_email,
+)
 
-MIN_PASSWORD_LENGTH = 12
 
+def prompt(label: str, validate) -> str:
+    """Ask for a value until the validators accepts it."""
 
-def prompt_required(label: str) -> str:
-    """Ask for a value until a non-empty one is given."""
     while True:
-        value = input(f"{label}: ").strip()
-        if value:
-            return value
-        print("This field is required.")
+        try:
+            return validate(input(f"{label}: "))
+        except ValidationError as error:
+            print(error)
 
 
 def prompt_password() -> str:
     """Ask for the password twice, without echoing it to the terminal."""
     while True:
-        password = getpass.getpass("Password: ")
-        if len(password) < MIN_PASSWORD_LENGTH:
-            print(f"At least {MIN_PASSWORD_LENGTH} characters required.")
-        elif password != getpass.getpass("Confirm password: "):
-            print("Passwords do not match.")
-        else:
-            return password
+        try:
+            password = validate_password(getpass.getpass("Password: "))
+        except ValidationError as error:
+            print(error)
+            continue
+
+        if password != getpass.getpass("Confirm password: "):
+            print("Passwords do not match")
+            continue
+
+        return password
 
 
 def main() -> None:
@@ -45,9 +54,19 @@ def main() -> None:
             sys.exit("Roles are missing: run 'python init_db.py first.")
 
         user = User(
-            employee_number=prompt_required("Employee number"),
-            full_name=prompt_required("Full name"),
-            email=prompt_required("Email"),
+            employee_number=prompt(
+                "Employee number",
+                lambda value: validate_required_text(
+                    value, field="Employee number", max_length=20
+                ),
+            ),
+            full_name=prompt(
+                "Full name",
+                lambda value: validate_required_text(
+                    value, field="Full name", max_length=100
+                ),
+            ),
+            email=prompt("Email", validate_email),
             role_id=role.id,
         )
         user.set_password(prompt_password())
