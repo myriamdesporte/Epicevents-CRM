@@ -7,7 +7,8 @@ import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from epicevents import auth, database
+from epicevents import database
+from epicevents.services import auth
 from epicevents.database import Base
 from epicevents.models import Role, RoleName, User, Contract, Event, Client
 

@@ -1,4 +1,9 @@
-"""Terminal output helpers, built on rich."""
+"""Display building blocks, built on rich.
+
+The only file in the project that imports rich. The other views describe
+what to show for one entity; this module knows how to put it on screen.
+Changing the whole look of the application therefore touches a single file.
+"""
 
 from rich import box
 from rich.console import Console
@@ -38,7 +43,7 @@ def print_table(title: str, columns: tuple[str, ...], rows: list[tuple]) -> None
 
 def print_details(title: str, rows: dict[str, str]) -> None:
     """Display a set of field and value pairs as a table."""
-    table = Table(title=title, show_header=False, box=box.SQUARE)
+    table = Table(title=title, show_header=False, box=box.SIMPLE)
     table.add_column(style="bold")
     table.add_column()
 

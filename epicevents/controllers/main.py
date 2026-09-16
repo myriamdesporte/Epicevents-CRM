@@ -2,7 +2,7 @@
 
 import click
 
-from epicevents.cli import auth, client, contract, event
+from epicevents.controllers import auth, client, contract, event
 
 
 @click.group()

@@ -8,7 +8,7 @@ from epicevents.repositories import (
     EventRepository,
     UserRepository,
 )
-from tests.integration.conftest import create_client, create_contract, create_event
+from tests.conftest import create_client, create_contract, create_event
 
 # --------------------------------------------------------------------------
 # Collaborators

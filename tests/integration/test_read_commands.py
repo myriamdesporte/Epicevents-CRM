@@ -5,8 +5,8 @@ from decimal import Decimal
 import pytest
 from click.testing import CliRunner
 
-from epicevents.cli.main import cli
-from tests.integration.conftest import (
+from epicevents.controllers.main import cli
+from tests.conftest import (
     PASSWORD,
     create_client,
     create_contract,

@@ -5,8 +5,8 @@ from datetime import timedelta
 import jwt
 import pytest
 
-from epicevents import auth
-from epicevents.auth import (
+from epicevents.services import auth
+from epicevents.services.auth import (
     AuthenticationError,
     AuthorizationError,
     InvalidCredentialsError,
@@ -22,7 +22,7 @@ from epicevents.auth import (
     read_token,
 )
 from epicevents.permissions import Permission
-from tests.integration.conftest import PASSWORD
+from tests.conftest import PASSWORD
 
 # --------------------------------------------------------------------------
 # Authentication

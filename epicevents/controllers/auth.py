@@ -2,9 +2,10 @@
 
 import click
 
-from epicevents import auth, database
-from epicevents.cli.console import print_details, print_success
-from epicevents.cli.errors import handle_errors
+from epicevents import database
+from epicevents.controllers.errors import handle_errors
+from epicevents.services import auth
+from epicevents.views import user as user_view
 
 
 @click.command()
@@ -15,8 +16,8 @@ def login(email: str) -> None:
     password = click.prompt("Password", hide_input=True)
 
     with database.Session() as session:
-        user = auth.login(session, email, password)
-        print_success(f"Logged in as {user.full_name} ({user.role.name}).")
+        current_user = auth.login(session, email, password)
+        user_view.show_login(current_user)
 
 
 @click.command()
@@ -24,7 +25,7 @@ def login(email: str) -> None:
 def logout() -> None:
     """Forget the session stored on this machine."""
     auth.clear_token()
-    print_success("Logged out.")
+    user_view.show_logout()
 
 
 @click.command()
@@ -32,13 +33,5 @@ def logout() -> None:
 def whoami() -> None:
     """Show the collaborator the current session belongs to."""
     with database.Session() as session:
-        user = auth.get_current_user(session)
-        print_details(
-            "Current session",
-            {
-                "Employee number": user.employee_number,
-                "Name": user.full_name,
-                "Email": user.email,
-                "Role": user.role.name,
-            },
-        )
+        current_user = auth.get_current_user(session)
+        user_view.show_current_user(current_user)
