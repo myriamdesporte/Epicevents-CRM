@@ -1,6 +1,6 @@
 """Display of the contracts."""
 
-from epicevents.views.console import print_info, print_table
+from epicevents.views.console import print_info, print_table, print_success
 
 COLUMNS = ("ID", "Client", "Sales contact", "Total", "Due", "Signed")
 
@@ -25,3 +25,12 @@ def show_contracts(contracts) -> None:
         return
 
     print_table("Contracts", COLUMNS, [as_row(contract) for contract in contracts])
+
+
+def show_saved(contract) -> None:
+    """Confirm that a contract was created or updated."""
+    signed = "signed" if contract.is_signed else "not signed"
+    print_success(
+        f"Contract {contract.id} saved for {contract.client.full_name}: "
+        f"{contract.amount_due:.2f} still due, {signed}."
+    )

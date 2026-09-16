@@ -5,6 +5,7 @@ import functools
 from sqlalchemy.exc import OperationalError
 
 from epicevents.services.auth import AuthenticationError, AuthorizationError
+from epicevents.validators import ValidationError
 from epicevents.views.console import print_error
 
 DATABASE_UNREACHABLE = (
@@ -20,7 +21,7 @@ def handle_errors(command):
     def wrapper(*args, **kwargs):
         try:
             return command(*args, **kwargs)
-        except (AuthenticationError, AuthorizationError) as error:
+        except (AuthenticationError, AuthorizationError, ValidationError) as error:
             print_error(str(error))
             raise SystemExit(1)
         except OperationalError:

@@ -1,6 +1,6 @@
 """Display of the events."""
 
-from epicevents.views.console import print_info, print_table
+from epicevents.views.console import print_info, print_table, print_success
 
 COLUMNS = ("ID", "Name", "Client", "Start", "End", "Attendees", "Support")
 
@@ -30,3 +30,9 @@ def show_events(events) -> None:
         return
 
     print_table("Events", COLUMNS, [as_row(event) for event in events])
+
+
+def show_saved(event) -> None:
+    """Confirm that an event was created or updated."""
+    support = event.support_contact.full_name if event.support_contact else "nobody yet"
+    print_success(f"Event {event.id} saved: {event.name}, support: {support}.")

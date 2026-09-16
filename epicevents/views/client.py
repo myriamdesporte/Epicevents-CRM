@@ -1,6 +1,6 @@
 """Display of the clients."""
 
-from epicevents.views.console import print_info, print_table
+from epicevents.views.console import print_info, print_table, print_success
 
 COLUMNS = ("ID", "Name", "Company", "Email", "Phone", "Sales contact")
 
@@ -24,3 +24,8 @@ def show_clients(clients) -> None:
         return
 
     print_table("Clients", COLUMNS, [as_row(client) for client in clients])
+
+
+def show_saved(client) -> None:
+    """Confirm that a client was created or updated."""
+    print_success(f"Client saved: {client.full_name} ({client.company_name}).")

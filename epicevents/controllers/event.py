@@ -4,8 +4,11 @@ import click
 
 from epicevents import database
 from epicevents.controllers.errors import handle_errors
-from epicevents.repositories import EventRepository
+from epicevents.controllers.options import given
+from epicevents.repositories import EventRepository, UserRepository
 from epicevents.services import auth
+from epicevents.services import event as event_service
+from epicevents.validators import DATETIME_EXAMPLE, ValidationError
 from epicevents.views import event as event_view
 
 
@@ -33,3 +36,106 @@ def list_events(no_support: bool, mine: bool) -> None:
         )
 
         event_view.show_events(events)
+
+
+DATE_HELP = f"Local date and time, like '{DATETIME_EXAMPLE}'."
+
+
+def _find(session, event_id: int):
+    """Return the event, or explain that the id is unknown."""
+    found = EventRepository(session).get(event_id)
+    if found is None:
+        raise ValidationError(f"No event has the id {event_id}.")
+    return found
+
+
+@event.command("create")
+@click.option("--contract-id", prompt="Contract id", type=int)
+@click.option("--name", prompt="Event name")
+@click.option("--start", prompt="Start", help=DATE_HELP)
+@click.option("--end", prompt="End", help=DATE_HELP)
+@click.option("--location", prompt="Location")
+@click.option("--attendees", prompt="Attendees")
+@click.option("--notes", default=None, help="Free text.")
+@handle_errors
+def create_event(
+    contract_id: int,
+    name: str,
+    start: str,
+    end: str,
+    location: str,
+    attendees: str,
+    notes: str,
+) -> None:
+    """Create an event for a signed contract of one of your clients."""
+    with database.Session() as session:
+        created = event_service.create_event(
+            session,
+            auth.get_current_user(session),
+            contract_id=contract_id,
+            name=name,
+            start_date=start,
+            end_date=end,
+            location=location,
+            attendees=attendees,
+            notes=notes,
+        )
+        event_view.show_saved(created)
+
+
+@event.command("update")
+@click.argument("event_id", type=int)
+@click.option("--name")
+@click.option("--start", help=DATE_HELP)
+@click.option("--end", help=DATE_HELP)
+@click.option("--location")
+@click.option("--attendees")
+@click.option("--notes")
+@handle_errors
+def update_event(
+    event_id: int,
+    name: str,
+    start: str,
+    end: str,
+    location: str,
+    attendees: str,
+    notes: str,
+) -> None:
+    """Update an event assigned to you."""
+    changes = given(
+        name=name,
+        start_date=start,
+        end_date=end,
+        location=location,
+        attendees=attendees,
+        notes=notes,
+    )
+
+    if not changes:
+        raise click.UsageError("Nothing to update: give at least one option.")
+
+    with database.Session() as session:
+        found = _find(session, event_id)
+        event_service.update_event(
+            session, auth.get_current_user(session), found, **changes
+        )
+        event_view.show_saved(found)
+
+
+@event.command("assign-support")
+@click.argument("event_id", type=int)
+@click.option("--user-id", prompt="Support collaborator id", type=int)
+@handle_errors
+def assign_support(event_id: int, user_id: int) -> None:
+    """Assign a support collaborator to an event. Management only."""
+    with database.Session() as session:
+        found = _find(session, event_id)
+
+        support = UserRepository(session).get(user_id)
+        if support is None:
+            raise ValidationError(f"No collaborator has the id {user_id}.")
+
+        event_service.assign_support(
+            session, auth.get_current_user(session), found, support
+        )
+        event_view.show_saved(found)
