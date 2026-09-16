@@ -18,3 +18,8 @@ class UserRepository(BaseRepository):
         """Return the collaborator having this email, or None."""
         query = self._select().where(User.email == email)
         return self.session.scalars(query).one_or_none()
+
+    def get_by_employee_number(self, employee_number: str):
+        """Return the collaborator having this employee number, or None."""
+        query = self._select().where(User.employee_number == employee_number)
+        return self.session.scalars(query).one_or_none()

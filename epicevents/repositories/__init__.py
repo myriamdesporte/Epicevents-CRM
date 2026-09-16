@@ -8,11 +8,13 @@ business rules go through these classes.
 from epicevents.repositories.client import ClientRepository
 from epicevents.repositories.contract import ContractRepository
 from epicevents.repositories.event import EventRepository
+from epicevents.repositories.role import RoleRepository
 from epicevents.repositories.user import UserRepository
 
 __all__ = [
     "ClientRepository",
     "ContractRepository",
     "EventRepository",
+    "RoleRepository",
     "UserRepository",
 ]
