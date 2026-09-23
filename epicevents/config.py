@@ -14,3 +14,5 @@ DATABASE_URL = (
 )
 
 JWT_SECRET = os.getenv("JWT_SECRET")
+
+SENTRY_DSN = os.getenv("SENTRY_DSN")

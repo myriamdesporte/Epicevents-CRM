@@ -1,5 +1,6 @@
 """Business rules about the collaborators."""
 
+from epicevents import monitoring
 from epicevents.permissions import Permission
 from epicevents.repositories import ClientRepository, RoleRepository, UserRepository
 from epicevents.security import hash_password
@@ -68,7 +69,7 @@ def create_user(
     email = validate_email(email)
     _refuse_duplicate(session, email=email, employee_number=employee_number)
 
-    return UserRepository(session).add(
+    created = UserRepository(session).add(
         employee_number=employee_number,
         full_name=_validate_full_name(full_name),
         email=email,
@@ -76,6 +77,8 @@ def create_user(
         password_hash=hash_password(validate_password(password)),
         role_id=_role_id(session, role_name),
     )
+    monitoring.log_user_change("created", created, current_user)
+    return created
 
 
 def update_user(session, current_user, user, **changes):
@@ -108,7 +111,9 @@ def update_user(session, current_user, user, **changes):
         allow=user,
     )
 
-    return UserRepository(session).update(user, **validated, **computed)
+    updated = UserRepository(session).update(user, **validated, **computed)
+    monitoring.log_user_change("updated", update, current_user)
+    return updated
 
 
 def delete_user(session, current_user, user) -> None:
@@ -123,4 +128,5 @@ def delete_user(session, current_user, user) -> None:
             "this account."
         )
 
+    monitoring.log_user_change("deleted", user, current_user)
     UserRepository(session).delete(user)

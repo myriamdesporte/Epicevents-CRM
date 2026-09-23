@@ -1,5 +1,6 @@
 """Business rules about the contracts."""
 
+from epicevents import monitoring
 from epicevents.models import RoleName
 from epicevents.permissions import Permission
 from epicevents.repositories import ClientRepository, ContractRepository
@@ -76,4 +77,6 @@ def sign_contract(session, current_user, contract):
     if contract.is_signed:
         raise ValidationError("This contract is already signed.")
 
-    return ContractRepository(session).update(contract, is_signed=True)
+    signed = ContractRepository(session).update(contract, is_signed=True)
+    monitoring.log_contract_signed(signed, current_user)
+    return signed
