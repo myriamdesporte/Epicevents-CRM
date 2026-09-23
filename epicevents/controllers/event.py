@@ -4,7 +4,9 @@ import click
 
 from epicevents import database
 from epicevents.controllers.errors import handle_errors
+from epicevents.controllers.guards import requires
 from epicevents.controllers.options import given
+from epicevents.permissions import Permission
 from epicevents.repositories import EventRepository, UserRepository
 from epicevents.services import auth
 from epicevents.services import event as event_service
@@ -50,6 +52,7 @@ def _find(session, event_id: int):
 
 
 @event.command("create")
+@requires(Permission.EVENT_CREATE)
 @click.option("--contract-id", prompt="Contract id", type=int)
 @click.option("--name", prompt="Event name")
 @click.option("--start", prompt="Start", help=DATE_HELP)
@@ -84,6 +87,7 @@ def create_event(
 
 
 @event.command("update")
+@requires(Permission.EVENT_UPDATE)
 @click.argument("event_id", type=int)
 @click.option("--name")
 @click.option("--start", help=DATE_HELP)
@@ -123,6 +127,7 @@ def update_event(
 
 
 @event.command("assign-support")
+@requires(Permission.EVENT_UPDATE)
 @click.argument("event_id", type=int)
 @click.option("--user-id", prompt="Support collaborator id", type=int)
 @handle_errors

@@ -4,7 +4,9 @@ import click
 
 from epicevents import database
 from epicevents.controllers.errors import handle_errors
+from epicevents.controllers.guards import requires
 from epicevents.controllers.options import given
+from epicevents.permissions import Permission
 from epicevents.repositories import ClientRepository
 from epicevents.services import auth
 from epicevents.services import client as client_service
@@ -38,6 +40,7 @@ def list_clients(mine: bool) -> None:
 
 
 @client.command("create")
+@requires(Permission.CLIENT_CREATE)
 @click.option("--full-name", prompt="Full name")
 @click.option("--email", prompt="Email")
 @click.option("--phone", prompt="Phone")
@@ -58,6 +61,7 @@ def create_client(full_name: str, email: str, phone: str, company_name: str) -> 
 
 
 @client.command("update")
+@requires(Permission.CLIENT_UPDATE)
 @click.argument("client_id", type=int)
 @click.option("--full-name")
 @click.option("--email")

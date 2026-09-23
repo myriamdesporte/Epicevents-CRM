@@ -4,9 +4,9 @@ import click
 
 from epicevents import database
 from epicevents.controllers.errors import handle_errors
+from epicevents.permissions import Permission, permissions_for
 from epicevents.services import auth
 from epicevents.views.console import (
-    console,
     print_error,
     print_info,
     print_menu,
@@ -43,35 +43,43 @@ EDITABLE = {
 
 ACTIONS = {
     "Clients": [
-        ("List every client", ["client", "list"]),
-        ("List my clients", ["client", "list", "--mine"]),
-        ("Show one client", ["client", "show", "<id>"]),
-        ("Create a client", ["client", "create"]),
-        ("Update a client", ["client", "update", "<id>"]),
+        ("List every client", ["client", "list"], None),
+        ("List my clients", ["client", "list", "--mine"], None),
+        ("Show one client", ["client", "show", "<id>"], None),
+        ("Create a client", ["client", "create"], Permission.CLIENT_CREATE),
+        ("Update a client", ["client", "update", "<id>"], Permission.CLIENT_UPDATE),
     ],
     "Contracts": [
-        ("List every contract", ["contract", "list"]),
-        ("List the unsigned ones", ["contract", "list", "--unsigned"]),
-        ("List those still owing money", ["contract", "list", "--unpaid"]),
-        ("Show one contract", ["contract", "show", "<id>"]),
-        ("Create a contract", ["contract", "create"]),
-        ("Update a contract", ["contract", "update", "<id>"]),
-        ("Sign a contract", ["contract", "sign", "<id>"]),
+        ("List every contract", ["contract", "list"], None),
+        ("List the unsigned ones", ["contract", "list", "--unsigned"], None),
+        ("List those still owing money", ["contract", "list", "--unpaid"], None),
+        ("Show one contract", ["contract", "show", "<id>"], None),
+        ("Create a contract", ["contract", "create"], Permission.CONTRACT_CREATE),
+        (
+            "Update a contract",
+            ["contract", "update", "<id>"],
+            Permission.CONTRACT_UPDATE,
+        ),
+        ("Sign a contract", ["contract", "sign", "<id>"], Permission.CONTRACT_UPDATE),
     ],
     "Events": [
-        ("List every event", ["event", "list"]),
-        ("List those without support", ["event", "list", "--no-support"]),
-        ("List the events assigned to me", ["event", "list", "--mine"]),
-        ("Show one event", ["event", "show", "<id>"]),
-        ("Create an event", ["event", "create"]),
-        ("Update an event", ["event", "update", "<id>"]),
-        ("Assign a support collaborator", ["event", "assign-support", "<id>"]),
+        ("List every event", ["event", "list"], None),
+        ("List those without support", ["event", "list", "--no-support"], None),
+        ("List the events assigned to me", ["event", "list", "--mine"], None),
+        ("Show one event", ["event", "show", "<id>"], None),
+        ("Create an event", ["event", "create"], Permission.EVENT_CREATE),
+        ("Update an event", ["event", "update", "<id>"], Permission.EVENT_UPDATE),
+        (
+            "Assign a support collaborator",
+            ["event", "assign-support", "<id>"],
+            Permission.EVENT_UPDATE,
+        ),
     ],
     "Collaborators": [
-        ("List every collaborator", ["user", "list"]),
-        ("Create a collaborator", ["user", "create"]),
-        ("Update a collaborator", ["user", "update", "<id>"]),
-        ("Delete a collaborator", ["user", "delete", "<id>"]),
+        ("List every collaborator", ["user", "list"], None),
+        ("Create a collaborator", ["user", "create"], Permission.USER_CREATE),
+        ("Update a collaborator", ["user", "update", "<id>"], Permission.USER_UPDATE),
+        ("Delete a collaborator", ["user", "delete", "<id>"], Permission.USER_DELETE),
     ],
 }
 
@@ -129,9 +137,18 @@ def ask_updates(entity: str) -> list[str]:
     return given
 
 
-def entity_menu(name: str) -> None:
+def allowed_actions(name: str, granted) -> list[tuple[str, list[str]]]:
+    """Keep only the actions this collaborator may actually run."""
+    return [
+        (label, arguments)
+        for label, arguments, permission in ACTIONS[name]
+        if permission is None or permission in granted
+    ]
+
+
+def entity_menu(name: str, granted) -> None:
     """Offer the actions available on one entity, until the reader goes back."""
-    actions = ACTIONS[name]
+    actions = allowed_actions(name, granted)
     labels = [label for label, _ in actions]
 
     while True:
@@ -151,14 +168,18 @@ def entity_menu(name: str) -> None:
         run(arguments)
 
 
-def current_collaborator():
-    """Return the collaborator of the stored session, or None."""
+def current_session():
+    """Return who is signed in and what they may do, or None if nobody is."""
     with database.Session() as session:
         try:
             user = auth.get_current_user(session)
-            return f"{user.full_name} ({user.role.name})"
         except auth.AuthenticationError:
             return None
+
+        return (
+            f"{user.full_name} ({user.role.name})",
+            permissions_for(user.role.name),
+        )
 
 
 @click.command()
@@ -167,21 +188,22 @@ def menu() -> None:
     """Browse the CRM through a menu instead of typing commands."""
     print_title("Epic Events CRM")
 
-    if current_collaborator() is None:
+    if current_session() is None:
         print_info("No session yet -- logging in.")
         run(["login"])
 
-        if current_collaborator() is None:
+        if current_session() is None:
             return
 
     entities = list(ACTIONS)
 
     while True:
-        who = current_collaborator()
-        if who is None:
+        signed_in = current_session()
+        if signed_in is None:
             print_info("Session over.")
             return
 
+        who, granted = signed_in
         chosen = ask_choice(f"Signed in as {who}", entities + ["Log out"])
 
         if chosen is None:
@@ -192,4 +214,4 @@ def menu() -> None:
             run(["logout"])
             return
 
-        entity_menu(entities[chosen])
+        entity_menu(entities[chosen], granted)

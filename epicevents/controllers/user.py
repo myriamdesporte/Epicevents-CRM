@@ -4,7 +4,9 @@ import click
 
 from epicevents import database
 from epicevents.controllers.errors import handle_errors
+from epicevents.controllers.guards import requires
 from epicevents.controllers.options import given
+from epicevents.permissions import Permission
 from epicevents.repositories import UserRepository
 from epicevents.services import auth
 from epicevents.services import user as user_service
@@ -27,6 +29,7 @@ def list_users() -> None:
 
 
 @user.command("create")
+@requires(Permission.USER_CREATE)
 @click.option("--employee-number", prompt="Employee number")
 @click.option("--full-name", prompt="Full name")
 @click.option("--email", prompt="Email")
@@ -52,6 +55,7 @@ def create_user(employee_number: str, full_name: str, email: str, role: str) -> 
 
 
 @user.command("update")
+@requires(Permission.USER_UPDATE)
 @click.argument("user_id", type=int)
 @click.option("--employee-number")
 @click.option("--full-name")
@@ -95,6 +99,7 @@ def update_user(
 
 
 @user.command("delete")
+@requires(Permission.USER_DELETE)
 @click.argument("user_id", type=int)
 @handle_errors
 def delete_user(user_id: int) -> None:

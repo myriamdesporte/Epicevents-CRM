@@ -4,7 +4,9 @@ import click
 
 from epicevents import database
 from epicevents.controllers.errors import handle_errors
+from epicevents.controllers.guards import requires
 from epicevents.controllers.options import given
+from epicevents.permissions import Permission
 from epicevents.repositories import ContractRepository
 from epicevents.services import auth
 from epicevents.services import contract as contract_service
@@ -47,6 +49,7 @@ def _find(session, contract_id: int):
 
 
 @contract.command("create")
+@requires(Permission.CONTRACT_CREATE)
 @click.option("--client-id", prompt="Client id", type=int)
 @click.option("--total-amount", prompt="Total amount")
 @click.option("--amount-due", prompt="Amount still due")
@@ -69,6 +72,7 @@ def create_contract(
 
 
 @contract.command("update")
+@requires(Permission.CONTRACT_UPDATE)
 @click.argument("contract_id", type=int)
 @click.option("--total-amount")
 @click.option("--amount-due")
@@ -89,6 +93,7 @@ def update_contract(contract_id: int, total_amount: str, amount_due: str) -> Non
 
 
 @contract.command("sign")
+@requires(Permission.CONTRACT_UPDATE)
 @click.argument("contract_id", type=int)
 @handle_errors
 def sign_contract(contract_id: int) -> None:

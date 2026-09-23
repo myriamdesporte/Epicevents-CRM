@@ -111,7 +111,7 @@ def test_altered_token_is_refused(session, sales_user):
     token = create_token(sales_user)
     middle = len(token) // 2
     altered = (
-        token[:middle] + ("A" if token[middle] != "A" else "B") + token[middle + 1 :]
+        token[:middle] + ("A" if token[middle] != "A" else "B") + token[middle + 1:]
     )
     with pytest.raises(InvalidTokenError):
         read_token(altered)

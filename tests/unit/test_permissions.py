@@ -1,7 +1,5 @@
 """Tests for the role-based permission matrix."""
 
-import pytest
-
 from epicevents.models import RoleName
 from epicevents.permissions import (
     ROLE_PERMISSIONS,

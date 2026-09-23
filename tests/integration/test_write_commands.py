@@ -111,6 +111,20 @@ def test_sales_is_refused_without_a_traceback(session, logged_in, runner, sales_
     assert "does not allow" in result.stderr
 
 
+def test_sales_is_refused_before_being_asked_anything(
+    session, logged_in, runner, sales_user
+):
+    """Refuses access before asking for input."""
+    logged_in(sales_user)
+
+    result = runner.invoke(cli, ["user", "create"], input="")
+
+    assert result.exit_code == 1
+    assert "does not allow" in result.stderr
+    for question in ("Employee number", "Full name", "Email", "Role", "Password"):
+        assert question not in result.output
+
+
 def test_deleting_a_collaborator_who_has_clients_is_explained(
     session, logged_in, runner, management_user, sales_user, client
 ):

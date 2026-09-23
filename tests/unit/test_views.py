@@ -7,7 +7,6 @@ from epicevents.views.console import (
     format_datetime,
     format_money,
     format_yes_no,
-    format_attention,
 )
 
 
