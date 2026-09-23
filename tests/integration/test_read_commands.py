@@ -92,14 +92,24 @@ def test_client_list_mine_keeps_only_my_clients(
     assert "Lou Bouzin" not in result.output
 
 
-def test_client_list_when_empty(session, logged_in, runner, sales_user):
-    """An empty client list shows a message instead of an empty table."""
-    logged_in(sales_user)
+@pytest.mark.parametrize(
+    "command, message",
+    [
+        (["client", "list"], "No client to display"),
+        (["contract", "list"], "No contract to display"),
+        (["event", "list"], "No event to display"),
+    ],
+)
+def test_an_empty_list_says_so(
+    session, logged_in, runner, management_user, command, message
+):
+    """Empty lists display an appropriate message."""
+    logged_in(management_user)
 
-    result = runner.invoke(cli, ["client", "list"])
+    result = runner.invoke(cli, command)
 
     assert result.exit_code == 0
-    assert "No client to display" in result.output
+    assert message in result.output
 
 
 # --------------------------------------------------------------------------
@@ -218,3 +228,79 @@ def test_event_without_support_shows_no_collaborator(
     assert result.exit_code == 0
     assert "Orphan" in result.output
     assert support_user.full_name not in result.output
+
+
+# --------------------------------------------------------------------------
+# Detail views
+# --------------------------------------------------------------------------
+
+
+def test_client_show_displays_the_two_dates(
+    session, logged_in, runner, sales_user, client
+):
+    """Client details display both dates."""
+    logged_in(sales_user)
+
+    result = runner.invoke(cli, ["client", "show", str(client.id)])
+
+    assert result.exit_code == 0
+    assert "First contact" in result.output
+    assert "Last update" in result.output
+
+
+def test_event_show_displays_the_location_and_the_notes(
+    session, logged_in, runner, sales_user, signed_contract
+):
+    """Event details display the location and notes."""
+    event = create_event(session, signed_contract, None)
+    event.notes = "Wedding starts at 3PM, by the river."
+    session.commit()
+    logged_in(sales_user)
+
+    result = runner.invoke(cli, ["event", "show", str(event.id)])
+
+    assert result.exit_code == 0
+    assert "Chateau" in result.output
+    assert "by the river" in result.output
+
+
+def test_event_show_says_when_no_support_is_assigned(
+    session, logged_in, runner, sales_user, signed_contract
+):
+    """Event details show when no support is assigned."""
+    event = create_event(session, signed_contract, None)
+    logged_in(sales_user)
+
+    result = runner.invoke(cli, ["event", "show", str(event.id)])
+
+    assert "nobody yet" in result.output
+
+
+def test_contract_show_displays_the_amounts(
+    session, logged_in, runner, sales_user, signed_contract
+):
+    """Contract details display the amounts."""
+    logged_in(sales_user)
+
+    result = runner.invoke(cli, ["contract", "show", str(signed_contract.id)])
+
+    assert result.exit_code == 0
+    assert "1000.00" in result.output
+
+
+def test_show_needs_a_session(runner, cli_database, client):
+    """Show commands require authentication."""
+    result = runner.invoke(cli, ["client", "show", str(client.id)])
+
+    assert result.exit_code == 1
+    assert "Not logged in" in result.stderr
+
+
+def test_show_explains_an_unknown_id(session, logged_in, runner, sales_user):
+    """An unknown client ID is explained."""
+    logged_in(sales_user)
+
+    result = runner.invoke(cli, ["client", "show", "999"])
+
+    assert result.exit_code == 1
+    assert "No client has the id 999" in result.stderr
