@@ -35,7 +35,7 @@ def list_contracts(unsigned: bool, unpaid: bool, mine: bool) -> None:
             sales_contact_id=current_user.id if mine else None,
         )
 
-        contract_view.show_contracts(contracts)
+        contract_view.show_list(contracts)
 
 
 def _find(session, contract_id: int):
@@ -97,3 +97,13 @@ def sign_contract(contract_id: int) -> None:
         found = _find(session, contract_id)
         contract_service.sign_contract(session, auth.get_current_user(session), found)
         contract_view.show_saved(found)
+
+
+@contract.command("show")
+@click.argument("contract_id", type=int)
+@handle_errors
+def show_contract(contract_id: int) -> None:
+    """Show every field of one contract."""
+    with database.Session() as session:
+        auth.get_current_user(session)
+        contract_view.show_details(_find(session, contract_id))

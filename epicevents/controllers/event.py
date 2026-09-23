@@ -35,7 +35,7 @@ def list_events(no_support: bool, mine: bool) -> None:
             support_contact_id=current_user.id if mine else None,
         )
 
-        event_view.show_events(events)
+        event_view.show_list(events)
 
 
 DATE_HELP = f"Local date and time, like '{DATETIME_EXAMPLE}'."
@@ -139,3 +139,13 @@ def assign_support(event_id: int, user_id: int) -> None:
             session, auth.get_current_user(session), found, support
         )
         event_view.show_saved(found)
+
+
+@event.command("show")
+@click.argument("event_id", type=int)
+@handle_errors
+def show_event(event_id: int) -> None:
+    """Show every field of one event, including location and notes."""
+    with database.Session() as session:
+        auth.get_current_user(session)
+        event_view.show_details(_find(session, event_id))

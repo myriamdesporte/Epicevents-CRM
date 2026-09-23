@@ -23,7 +23,7 @@ def list_users() -> None:
     """List the collaborators."""
     with database.Session() as session:
         auth.get_current_user(session)
-        user_view.show_users(UserRepository(session).list_all())
+        user_view.show_list(UserRepository(session).list_all())
 
 
 @user.command("create")

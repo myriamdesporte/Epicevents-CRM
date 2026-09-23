@@ -21,7 +21,7 @@ def as_row(user) -> tuple[str, ...]:
     )
 
 
-def show_users(users) -> None:
+def show_list(users) -> None:
     """Display a list of collaborators, or say there is none."""
     if not users:
         print_info("No collaborator to display.")

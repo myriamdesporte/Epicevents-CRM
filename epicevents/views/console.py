@@ -9,8 +9,18 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
+DATETIME_FORMAT = "%Y-%m-%d %H:%M"
+
 console = Console()
 error_console = Console(stderr=True)
+
+
+def format_datetime(value) -> str:
+    """Write a date and time in the reader's local time."""
+    if value.tzinfo is not None:
+        value = value.astimezone()
+
+    return value.strftime(DATETIME_FORMAT)
 
 
 def print_success(message: str) -> None:

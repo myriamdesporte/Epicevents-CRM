@@ -34,7 +34,7 @@ def list_clients(mine: bool) -> None:
         else:
             clients = repository.list_all()
 
-        client_view.show_clients(clients)
+        client_view.show_list(clients)
 
 
 @client.command("create")
@@ -91,3 +91,18 @@ def update_client(
             session, auth.get_current_user(session), found, **changes
         )
         client_view.show_saved(found)
+
+
+@client.command("show")
+@click.argument("client_id", type=int)
+@handle_errors
+def show_client(client_id: int) -> None:
+    """Show every field of one client."""
+    with database.Session() as session:
+        auth.get_current_user(session)
+
+        found = ClientRepository(session).get(client_id)
+        if found is None:
+            raise ValidationError(f"No client has the id {client_id}.")
+
+        client_view.show_details(found)
