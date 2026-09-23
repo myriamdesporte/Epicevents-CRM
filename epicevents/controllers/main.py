@@ -2,7 +2,7 @@
 
 import click
 
-from epicevents.controllers import auth, client, contract, event, user
+from epicevents.controllers import auth, client, contract, event, menu, user
 
 
 @click.group()
@@ -20,3 +20,6 @@ cli.add_command(user.user)
 cli.add_command(client.client)
 cli.add_command(contract.contract)
 cli.add_command(event.event)
+
+# Interactive menu
+cli.add_command(menu.menu)

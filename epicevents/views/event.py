@@ -1,18 +1,26 @@
 """Display of the events."""
 
 from epicevents.views.console import (
-    print_info,
-    print_table,
-    print_success,
+    format_attention,
     format_datetime,
     print_details,
+    print_info,
+    print_success,
+    print_table,
 )
 
 COLUMNS = ("ID", "Name", "Client", "Start", "End", "Attendees", "Support")
 
-DATE_FORMAT = "%Y-%m-%d %H:%M"
+NUMBERS = ("Attendees",)
+NO_SUPPORT = "unassigned"
 
-NO_SUPPORT = "-"
+
+def format_support(user) -> str:
+    """Write the support contact, or highlight that there is none yet."""
+    if user is None:
+        return format_attention(NO_SUPPORT)
+
+    return user.full_name
 
 
 def as_row(event) -> tuple[str, ...]:
@@ -24,8 +32,7 @@ def as_row(event) -> tuple[str, ...]:
         format_datetime(event.start_date),
         format_datetime(event.end_date),
         str(event.attendees),
-        # An event may legitimately have no support contact yet.
-        event.support_contact.full_name if event.support_contact else NO_SUPPORT,
+        format_support(event.support_contact),
     )
 
 
@@ -35,7 +42,7 @@ def show_list(events) -> None:
         print_info("No event to display.")
         return
 
-    print_table("Events", COLUMNS, [as_row(event) for event in events])
+    print_table("Events", COLUMNS, [as_row(event) for event in events], right=NUMBERS)
 
 
 def show_details(event) -> None:
@@ -52,11 +59,7 @@ def show_details(event) -> None:
             "End": format_datetime(event.end_date),
             "Location": event.location,
             "Attendees": str(event.attendees),
-            "Support contact": (
-                event.support_contact.full_name
-                if event.support_contact
-                else "nobody yet"
-            ),
+            "Support contact": format_support(event.support_contact),
             "Notes": event.notes or "-",
         },
     )
@@ -64,5 +67,5 @@ def show_details(event) -> None:
 
 def show_saved(event) -> None:
     """Confirm that an event was created or updated."""
-    support = event.support_contact.full_name if event.support_contact else "nobody yet"
+    support = format_support(event.support_contact)
     print_success(f"Event {event.id} saved: {event.name}, support: {support}.")

@@ -1,14 +1,27 @@
 """Display of the contracts."""
 
 from epicevents.views.console import (
-    print_info,
-    print_table,
-    print_success,
-    print_details,
+    format_attention,
     format_datetime,
+    format_money,
+    format_yes_no,
+    print_details,
+    print_info,
+    print_success,
+    print_table,
 )
 
 COLUMNS = ("ID", "Client", "Sales contact", "Total", "Due", "Signed")
+
+AMOUNTS = ("Total", "Due")
+
+
+def format_due(amount) -> str:
+    """Write an amount still due, highlighted unless it is nil."""
+    if amount == 0:
+        return format_money(amount)
+
+    return format_attention(format_money(amount))
 
 
 def as_row(contract) -> tuple[str, ...]:
@@ -18,9 +31,9 @@ def as_row(contract) -> tuple[str, ...]:
         contract.client.full_name,
         # Reached through the client: a contract has no sales contact of its own.
         contract.client.sales_contact.full_name,
-        f"{contract.total_amount:.2f}",
-        f"{contract.amount_due:.2f}",
-        "yes" if contract.is_signed else "no",
+        format_money(contract.total_amount),
+        format_due(contract.amount_due),
+        format_yes_no(contract.is_signed),
     )
 
 
@@ -30,7 +43,12 @@ def show_list(contracts) -> None:
         print_info("No contract to display.")
         return
 
-    print_table("Contracts", COLUMNS, [as_row(contract) for contract in contracts])
+    print_table(
+        "Contracts",
+        COLUMNS,
+        [as_row(contract) for contract in contracts],
+        right=AMOUNTS,
+    )
 
 
 def show_details(contract) -> None:
@@ -41,9 +59,9 @@ def show_details(contract) -> None:
             "Client": contract.client.full_name,
             "Company": contract.client.company_name,
             "Sales contact": contract.client.sales_contact.full_name,
-            "Total amount": f"{contract.total_amount:.2f}",
-            "Amount due": f"{contract.amount_due:.2f}",
-            "Signed": "yes" if contract.is_signed else "no",
+            "Total amount": format_money(contract.total_amount),
+            "Amount due": format_due(contract.amount_due),
+            "Signed": format_yes_no(contract.is_signed),
             "Created": format_datetime(contract.created_at),
             "Last update": format_datetime(contract.updated_at),
         },
@@ -55,5 +73,5 @@ def show_saved(contract) -> None:
     signed = "signed" if contract.is_signed else "not signed"
     print_success(
         f"Contract {contract.id} saved for {contract.client.full_name}: "
-        f"{contract.amount_due:.2f} still due, {signed}."
+        f"{format_money(contract.amount_due)} still due, {signed}."
     )

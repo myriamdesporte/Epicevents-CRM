@@ -273,7 +273,7 @@ def test_event_show_says_when_no_support_is_assigned(
 
     result = runner.invoke(cli, ["event", "show", str(event.id)])
 
-    assert "nobody yet" in result.output
+    assert "unassigned" in result.output
 
 
 def test_contract_show_displays_the_amounts(
@@ -285,7 +285,7 @@ def test_contract_show_displays_the_amounts(
     result = runner.invoke(cli, ["contract", "show", str(signed_contract.id)])
 
     assert result.exit_code == 0
-    assert "1000.00" in result.output
+    assert "1,000.00" in result.output
 
 
 def test_show_needs_a_session(runner, cli_database, client):

@@ -1,7 +1,14 @@
 """Tests for the display helpers."""
 
 from datetime import datetime, timedelta, timezone
-from epicevents.views.console import format_datetime
+from decimal import Decimal
+
+from epicevents.views.console import (
+    format_datetime,
+    format_money,
+    format_yes_no,
+    format_attention,
+)
 
 
 def test_a_naive_date_is_written_as_it_is():
@@ -20,3 +27,21 @@ def test_a_date_in_another_timezone_is_converted_too():
     utc = datetime(2026, 6, 4, 13, 0, tzinfo=timezone.utc)
     same_moment = datetime(2026, 6, 4, 15, 0, tzinfo=timezone(timedelta(hours=2)))
     assert format_datetime(utc) == format_datetime(same_moment)
+
+
+def test_an_amount_is_grouped_by_thousands():
+    """Formats amounts with two decimals."""
+    assert format_money(Decimal("12000")) == "12,000.00"
+    assert format_money(Decimal("875.5")) == "875.50"
+
+
+def test_a_small_amount_keeps_its_two_decimals():
+    """Keeps two decimal places."""
+    assert format_money(Decimal("0")) == "0.00"
+
+
+def test_a_yes_and_a_no_are_told_apart():
+    """Formats yes and no differently."""
+    assert "yes" in format_yes_no(True)
+    assert "no" in format_yes_no(False)
+    assert format_yes_no(True) != format_yes_no(False)
