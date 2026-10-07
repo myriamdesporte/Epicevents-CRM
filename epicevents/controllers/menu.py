@@ -32,6 +32,7 @@ EDITABLE = {
         ("--location", "Location"),
         ("--attendees", "Attendees"),
         ("--notes", "Notes"),
+        ("--contract-id", "Move to another contract (id)"),
     ],
     "user": [
         ("--employee-number", "Employee number"),

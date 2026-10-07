@@ -115,10 +115,43 @@ def assign_support(session, current_user, event, support_user):
     return EventRepository(session).update(event, support_contact_id=support_user.id)
 
 
+def _moved_to_contract(session, current_user, event, contract_id) -> int:
+    """Return the id of the contract an event is being moved to."""
+    if current_user.role.name != RoleName.MANAGEMENT:
+        raise AuthorizationError(
+            "Only the management department can move an event to another " "contract."
+        )
+
+    contract = ContractRepository(session).get(contract_id)
+    if contract is None:
+        raise ValidationError(f"No contract has the id {contract_id}.")
+
+    if not contract.is_signed:
+        raise ValidationError(
+            "This contract is not signed yet: an event can only belong to a "
+            "signed contract."
+        )
+
+    # Moving an event onto its current contract is allowed.
+    if contract.event is not None and contract.event.id != event.id:
+        raise ValidationError("This contract already has an event.")
+
+    return contract.id
+
+
 def update_event(session, current_user, event, **changes):
-    """Update the details of an event."""
+    """Update an event, including the contract it belongs to."""
     authorize(current_user, Permission.EVENT_UPDATE)
     _must_be_allowed_on(current_user, event)
+
+    if "contract_id" in changes:
+        moved = {
+            "contract_id": _moved_to_contract(
+                session, current_user, event, changes.pop("contract_id")
+            )
+        }
+    else:
+        moved = {}
 
     if "start_date" in changes or "end_date" in changes:
         start, end = validate_date_range(
@@ -131,4 +164,4 @@ def update_event(session, current_user, event, **changes):
 
     validated = validate_changes(changes, CHANGEABLE_FIELDS)
 
-    return EventRepository(session).update(event, **validated, **dates)
+    return EventRepository(session).update(event, **validated, **dates, **moved)

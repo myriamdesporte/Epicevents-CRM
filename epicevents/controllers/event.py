@@ -103,6 +103,11 @@ def create_event(
 @click.option("--location")
 @click.option("--attendees")
 @click.option("--notes")
+@click.option(
+    "--contract-id",
+    type=int,
+    help="Move the event to another signed contract. Management only.",
+)
 @handle_errors
 def update_event(
     event_id: int,
@@ -112,8 +117,9 @@ def update_event(
     location: str,
     attendees: str,
     notes: str,
+    contract_id: int,
 ) -> None:
-    """Update an event assigned to you."""
+    """Update an event, including the contract it belongs to."""
     changes = given(
         name=name,
         start_date=start,
@@ -121,6 +127,7 @@ def update_event(
         location=location,
         attendees=attendees,
         notes=notes,
+        contract_id=contract_id,
     )
 
     if not changes:
