@@ -92,6 +92,8 @@ def update_user(
         if found is None:
             raise ValidationError(f"No collaborator has the id {user_id}.")
 
+        user_view.show_selected(found)
+
         user_service.update_user(
             session, auth.get_current_user(session), found, **changes
         )
@@ -109,8 +111,10 @@ def delete_user(user_id: int) -> None:
         if found is None:
             raise ValidationError(f"No collaborator has the id {user_id}.")
 
-        # Deleting is irreversible: ask before doing it.
-        click.confirm(f"Delete {found.full_name}?", abort=True)
+        # Deleting is irreversible: show who it is then ask before doing it.
+        user_view.show_selected(found)
+
+        click.confirm("Delete this collaborator?", abort=True)
 
         user_service.delete_user(session, auth.get_current_user(session), found)
         user_view.show_deleted(found)

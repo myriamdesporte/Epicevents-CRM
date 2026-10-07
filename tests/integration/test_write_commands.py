@@ -261,7 +261,7 @@ def test_management_creates_and_signs_a_contract(
     assert created.exit_code == 0
 
     contract_id = ClientRepository(session).get(client.id).contracts[0].id
-    signed = runner.invoke(cli, ["contract", "sign", str(contract_id)])
+    signed = runner.invoke(cli, ["contract", "sign", str(contract_id)], input="y\n")
 
     assert signed.exit_code == 0
     assert "signed" in signed.output
@@ -364,6 +364,53 @@ def test_an_event_needs_a_signed_contract(
 
     assert result.exit_code == 1
     assert "not signed yet" in result.stderr
+
+
+def test_an_unsigned_contract_stops_the_form_before_it_starts(
+    session, logged_in, runner, sales_user, client
+):
+    """An unsigned contract stops the form before prompting."""
+    unsigned = create_contract(session, client, signed=False)
+    logged_in(sales_user)
+
+    result = runner.invoke(cli, ["event", "create"], input=f"{unsigned.id}\n")
+
+    assert result.exit_code == 1
+    assert "not signed yet" in result.stderr
+    for question in ("Event name", "Start", "End", "Location", "Attendees"):
+        assert question not in result.output
+
+
+def test_a_wrong_contract_id_stops_the_form_before_it_starts(
+    session, logged_in, runner, sales_user
+):
+    """An unknown contract stops the form before prompting."""
+    logged_in(sales_user)
+
+    result = runner.invoke(cli, ["event", "create"], input="999\n")
+
+    assert result.exit_code == 1
+    assert "No contract has the id 999" in result.stderr
+    assert "Event name" not in result.output
+
+
+def test_the_chosen_contract_is_displayed_before_the_questions(
+    session, logged_in, runner, sales_user, signed_contract
+):
+    """The selected contract is displayed before prompting."""
+    logged_in(sales_user)
+
+    result = runner.invoke(
+        cli,
+        ["event", "create"],
+        input=(
+            f"{signed_contract.id}\nGala\n2026-06-04 13:00\n2026-06-05 02:00\n"
+            "Chateau\n75\n"
+        ),
+    )
+
+    assert result.exit_code == 0
+    assert signed_contract.client.full_name in result.output
 
 
 def test_a_badly_formatted_date_is_explained(

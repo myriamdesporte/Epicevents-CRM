@@ -5,12 +5,13 @@ import click
 from epicevents import database
 from epicevents.controllers.errors import handle_errors
 from epicevents.controllers.guards import requires
-from epicevents.controllers.options import given
+from epicevents.controllers.options import ask, given
 from epicevents.permissions import Permission
 from epicevents.repositories import ContractRepository
 from epicevents.services import auth
 from epicevents.services import contract as contract_service
 from epicevents.validators import ValidationError
+from epicevents.views import client as client_view
 from epicevents.views import contract as contract_view
 
 
@@ -50,9 +51,9 @@ def _find(session, contract_id: int):
 
 @contract.command("create")
 @requires(Permission.CONTRACT_CREATE)
-@click.option("--client-id", prompt="Client id", type=int)
-@click.option("--total-amount", prompt="Total amount")
-@click.option("--amount-due", prompt="Amount still due")
+@click.option("--client-id", type=int)
+@click.option("--total-amount")
+@click.option("--amount-due")
 @click.option("--signed", is_flag=True, help="The client has already signed.")
 @handle_errors
 def create_contract(
@@ -60,12 +61,19 @@ def create_contract(
 ) -> None:
     """Create a contract for a client. Management only."""
     with database.Session() as session:
+        current_user = auth.get_current_user(session)
+
+        client = contract_service.client_for_new_contract(
+            session, current_user, ask(client_id, "Client id", type=int)
+        )
+        client_view.show_selected(client)
+
         created = contract_service.create_contract(
             session,
-            auth.get_current_user(session),
-            client_id=client_id,
-            total_amount=total_amount,
-            amount_due=amount_due,
+            current_user,
+            client_id=client.id,
+            total_amount=ask(total_amount, "Total amount"),
+            amount_due=ask(amount_due, "Amount still due"),
             is_signed=signed,
         )
         contract_view.show_saved(created)
@@ -86,6 +94,7 @@ def update_contract(contract_id: int, total_amount: str, amount_due: str) -> Non
 
     with database.Session() as session:
         found = _find(session, contract_id)
+        contract_view.show_selected(found)
         contract_service.update_contract(
             session, auth.get_current_user(session), found, **changes
         )
@@ -100,6 +109,10 @@ def sign_contract(contract_id: int) -> None:
     """Mark a contract as signed."""
     with database.Session() as session:
         found = _find(session, contract_id)
+
+        contract_view.show_selected(found)
+        click.confirm("Sign this contract?", abort=True)
+
         contract_service.sign_contract(session, auth.get_current_user(session), found)
         contract_view.show_saved(found)
 

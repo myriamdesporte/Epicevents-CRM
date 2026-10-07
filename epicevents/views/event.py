@@ -45,6 +45,15 @@ def show_list(events) -> None:
     print_table("Events", COLUMNS, [as_row(event) for event in events], right=NUMBERS)
 
 
+def show_selected(event) -> None:
+    """Say which event the command is about to work on."""
+    print_info(
+        f"  Event {event.id} -- {event.name}, "
+        f"{format_datetime(event.start_date)}, "
+        f"support: {format_support(event.support_contact)}"
+    )
+
+
 def show_details(event) -> None:
     """Display every field of one event."""
     client = event.contract.client

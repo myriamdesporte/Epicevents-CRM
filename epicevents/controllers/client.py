@@ -91,6 +91,8 @@ def update_client(
         if found is None:
             raise ValidationError(f"No client has the id {client_id}.")
 
+        client_view.show_selected(found)
+
         client_service.update_client(
             session, auth.get_current_user(session), found, **changes
         )

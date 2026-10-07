@@ -32,6 +32,11 @@ def show_list(clients) -> None:
     print_table("Clients", COLUMNS, [as_row(client) for client in clients])
 
 
+def show_selected(client) -> None:
+    """Say which client the command is about to work on."""
+    print_info(f"  Client {client.id} -- {client.full_name} ({client.company_name})")
+
+
 def show_details(client) -> None:
     """Display every field of one client."""
     print_details(

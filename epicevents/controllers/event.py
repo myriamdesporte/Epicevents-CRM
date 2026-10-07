@@ -5,13 +5,15 @@ import click
 from epicevents import database
 from epicevents.controllers.errors import handle_errors
 from epicevents.controllers.guards import requires
-from epicevents.controllers.options import given
+from epicevents.controllers.options import ask, given
 from epicevents.permissions import Permission
 from epicevents.repositories import EventRepository, UserRepository
 from epicevents.services import auth
 from epicevents.services import event as event_service
 from epicevents.validators import DATETIME_EXAMPLE, ValidationError
+from epicevents.views import contract as contract_view
 from epicevents.views import event as event_view
+from epicevents.views import user as user_view
 
 
 @click.group()
@@ -53,12 +55,12 @@ def _find(session, event_id: int):
 
 @event.command("create")
 @requires(Permission.EVENT_CREATE)
-@click.option("--contract-id", prompt="Contract id", type=int)
-@click.option("--name", prompt="Event name")
-@click.option("--start", prompt="Start", help=DATE_HELP)
-@click.option("--end", prompt="End", help=DATE_HELP)
-@click.option("--location", prompt="Location")
-@click.option("--attendees", prompt="Attendees")
+@click.option("--contract-id", type=int)
+@click.option("--name")
+@click.option("--start", help=DATE_HELP)
+@click.option("--end", help=DATE_HELP)
+@click.option("--location")
+@click.option("--attendees")
 @click.option("--notes", default=None, help="Free text.")
 @handle_errors
 def create_event(
@@ -72,18 +74,24 @@ def create_event(
 ) -> None:
     """Create an event for a signed contract of one of your clients."""
     with database.Session() as session:
-        created = event_service.create_event(
-            session,
-            auth.get_current_user(session),
-            contract_id=contract_id,
-            name=name,
-            start_date=start,
-            end_date=end,
-            location=location,
-            attendees=attendees,
-            notes=notes,
+        current_user = auth.get_current_user(session)
+        contract = event_service.contract_for_new_event(
+            session, current_user, ask(contract_id, "Contract id", type=int)
         )
-        event_view.show_saved(created)
+        contract_view.show_selected(contract)
+
+    created = event_service.create_event(
+        session,
+        current_user,
+        contract_id=contract.id,
+        name=ask(name, "Event name"),
+        start_date=ask(start, "Start"),
+        end_date=ask(end, "End"),
+        location=ask(location, "Location"),
+        attendees=ask(attendees, "Attendees"),
+        notes=notes,
+    )
+    event_view.show_saved(created)
 
 
 @event.command("update")
@@ -120,6 +128,8 @@ def update_event(
 
     with database.Session() as session:
         found = _find(session, event_id)
+        event_view.show_selected(found)
+
         event_service.update_event(
             session, auth.get_current_user(session), found, **changes
         )
@@ -129,16 +139,21 @@ def update_event(
 @event.command("assign-support")
 @requires(Permission.EVENT_UPDATE)
 @click.argument("event_id", type=int)
-@click.option("--user-id", prompt="Support collaborator id", type=int)
+@click.option("--user-id", type=int)
 @handle_errors
 def assign_support(event_id: int, user_id: int) -> None:
     """Assign a support collaborator to an event. Management only."""
     with database.Session() as session:
         found = _find(session, event_id)
+        event_view.show_selected(found)
+
+        user_id = ask(user_id, "Support collaborator id", type=int)
 
         support = UserRepository(session).get(user_id)
         if support is None:
             raise ValidationError(f"No collaborator has the id {user_id}.")
+
+        user_view.show_selected(support)
 
         event_service.assign_support(
             session, auth.get_current_user(session), found, support

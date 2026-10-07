@@ -24,15 +24,22 @@ def _must_be_allowed_on(current_user, contract) -> None:
         )
 
 
-def create_contract(
-    session, current_user, *, client_id, total_amount, amount_due, is_signed=False
-):
-    """Create a contract for a client. Management only."""
+def client_for_new_contract(session, current_user, client_id):
+    """Return the client a contract may be created for, or say why not."""
     authorize(current_user, Permission.CONTRACT_CREATE)
 
     client = ClientRepository(session).get(client_id)
     if client is None:
         raise ValidationError(f"No client has the id {client_id}.")
+
+    return client
+
+
+def create_contract(
+    session, current_user, *, client_id, total_amount, amount_due, is_signed=False
+):
+    """Create a contract for a client. Management only."""
+    client = client_for_new_contract(session, current_user, client_id)
 
     total = validate_amount(total_amount, field="Total amount")
 

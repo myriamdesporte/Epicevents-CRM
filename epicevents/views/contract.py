@@ -51,6 +51,16 @@ def show_list(contracts) -> None:
     )
 
 
+def show_selected(contract) -> None:
+    """Say which contract the command is about to work on."""
+    signed = "signed" if contract.is_signed else "not signed"
+    print_info(
+        f"  Contract {contract.id} -- {contract.client.full_name} "
+        f"({contract.client.company_name}), {format_money(contract.total_amount)}, "
+        f"{signed}"
+    )
+
+
 def show_details(contract) -> None:
     """Display every field of one contract."""
     print_details(

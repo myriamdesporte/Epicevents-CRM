@@ -39,19 +39,8 @@ def _must_be_allowed_on(current_user, event) -> None:
         )
 
 
-def create_event(
-    session,
-    current_user,
-    *,
-    contract_id,
-    name,
-    start_date,
-    end_date,
-    location,
-    attendees,
-    notes=None,
-):
-    """Create an event for a signed contract of one of your own clients."""
+def contract_for_new_event(session, current_user, contract_id):
+    """Return the contract an event may be created for, or say why it may not."""
     authorize(current_user, Permission.EVENT_CREATE)
 
     contract = ContractRepository(session).get(contract_id)
@@ -73,6 +62,24 @@ def create_event(
     if contract.event is not None:
         raise ValidationError("This contract already has an event.")
 
+    return contract
+
+
+def create_event(
+    session,
+    current_user,
+    *,
+    contract_id,
+    name,
+    start_date,
+    end_date,
+    location,
+    attendees,
+    notes=None,
+):
+    """Create an event for a signed contract of one of your own clients."""
+    contract = contract_for_new_event(session, current_user, contract_id)
+
     start, end = validate_date_range(start_date, end_date)
 
     return EventRepository(session).add(
@@ -85,7 +92,7 @@ def create_event(
         ),
         attendees=validate_attendees(attendees),
         notes=notes,
-        # No support contact yet: management assigns one afterwards.
+        # No support contact yet: management assigns one afterward.
         support_contact_id=None,
     )
 

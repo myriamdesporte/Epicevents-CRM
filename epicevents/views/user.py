@@ -30,6 +30,14 @@ def show_list(users) -> None:
     print_table("Collaborators", COLUMNS, [as_row(user) for user in users])
 
 
+def show_selected(user) -> None:
+    """Say which collaborator the command is about to work on."""
+    print_info(
+        f"  Collaborator {user.employee_number} -- {user.full_name} "
+        f"({user.role.name})"
+    )
+
+
 def show_saved(user) -> None:
     """Confirm that a collaborator was created or updated."""
     print_success(f"Collaborator saved: {user.full_name} ({user.role.name}).")
