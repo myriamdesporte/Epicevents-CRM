@@ -112,7 +112,7 @@ def update_user(session, current_user, user, **changes):
     )
 
     updated = UserRepository(session).update(user, **validated, **computed)
-    monitoring.log_user_change("updated", update, current_user)
+    monitoring.log_user_change("updated", updated, current_user)
     return updated
 
 
