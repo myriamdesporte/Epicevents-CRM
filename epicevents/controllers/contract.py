@@ -84,10 +84,19 @@ def create_contract(
 @click.argument("contract_id", type=int)
 @click.option("--total-amount")
 @click.option("--amount-due")
+@click.option(
+    "--client-id",
+    type=int,
+    help="Move the contract to another client. Management only.",
+)
 @handle_errors
-def update_contract(contract_id: int, total_amount: str, amount_due: str) -> None:
-    """Update the amounts of a contract."""
-    changes = given(total_amount=total_amount, amount_due=amount_due)
+def update_contract(
+    contract_id: int, total_amount: str, amount_due: str, client_id: int
+) -> None:
+    """Update a contract, including the client it belongs to."""
+    changes = given(
+        total_amount=total_amount, amount_due=amount_due, client_id=client_id
+    )
 
     if not changes:
         raise click.UsageError("Nothing to update: give at least one option.")

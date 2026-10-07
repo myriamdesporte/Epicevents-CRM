@@ -23,6 +23,7 @@ EDITABLE = {
     "contract": [
         ("--total-amount", "Total amount"),
         ("--amount-due", "Amount still due"),
+        ("--client-id", "Move to another client (id)"),
     ],
     "event": [
         ("--name", "Name"),

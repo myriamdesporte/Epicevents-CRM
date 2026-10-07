@@ -11,6 +11,8 @@ from epicevents.validators import (
     validate_amount_due,
 )
 
+CHANGEABLE_FIELDS = frozenset({"total_amount", "amount_due", "is_signed", "client_id"})
+
 
 def _must_be_allowed_on(current_user, contract) -> None:
     """Raise unless the collaborator may act on this contract."""
@@ -51,12 +53,26 @@ def create_contract(
     )
 
 
+def _moved_to_client(session, current_user, client_id) -> int:
+    """Return the id of the client a contract is being moved to."""
+    if current_user.role.name != RoleName.MANAGEMENT:
+        raise AuthorizationError(
+            "Only the management department can move a contract to another " "client."
+        )
+
+    client = ClientRepository(session).get(client_id)
+    if client is None:
+        raise ValidationError(f"No client has the id {client_id}.")
+
+    return client.id
+
+
 def update_contract(session, current_user, contract, **changes):
     """Update a contract's amounts or signature."""
     authorize(current_user, Permission.CONTRACT_UPDATE)
     _must_be_allowed_on(current_user, contract)
 
-    refused = set(changes) - {"total_amount", "amount_due", "is_signed"}
+    refused = set(changes) - CHANGEABLE_FIELDS
     if refused:
         raise ValidationError(f"Cannot be changed: {', '.join(sorted(refused))}.")
 
@@ -72,6 +88,11 @@ def update_contract(session, current_user, contract, **changes):
 
     if "is_signed" in changes:
         validated["is_signed"] = bool(changes["is_signed"])
+
+    if "client_id" in changes:
+        validated["client_id"] = _moved_to_client(
+            session, current_user, changes["client_id"]
+        )
 
     return ContractRepository(session).update(contract, **validated)
 
