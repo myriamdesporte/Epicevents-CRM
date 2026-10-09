@@ -19,7 +19,7 @@ def seed_roles() -> None:
         for role_name in RoleName:
             if role_name not in existing:
                 session.add(Role(name=role_name))
-                print(f"Role '{role_name}‘ created.")
+                print(f"Role '{role_name}' created.")
         session.commit()
 
 

@@ -1,4 +1,7 @@
+"""Settings read from the environment (.env file)."""
+
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()

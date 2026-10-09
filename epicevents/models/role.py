@@ -1,3 +1,5 @@
+"""The Role model and names of the departments."""
+
 import enum
 from typing import TYPE_CHECKING
 
@@ -11,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class RoleName(enum.StrEnum):
-    """The rol names Epic Events works with, one per department."""
+    """The role names Epic Events works with, one per department."""
 
     SALES = "sales"
     SUPPORT = "support"
@@ -28,5 +30,5 @@ class Role(ModelBase):
     # Relationships
     users: Mapped[list["User"]] = relationship(back_populates="role")
 
-    def __repr__(self):
-        return f"Role(id={self.id!r}, name={self.name!r}"
+    def __repr__(self) -> str:
+        return f"Role(id={self.id!r}, name={self.name!r})"

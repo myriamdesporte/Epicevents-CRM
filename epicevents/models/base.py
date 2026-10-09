@@ -1,3 +1,5 @@
+"""Columns shared by every model: id, creation and update dates."""
+
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime

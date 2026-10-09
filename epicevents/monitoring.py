@@ -1,3 +1,5 @@
+"""Reporting to Sentry."""
+
 import sentry_sdk
 
 from epicevents.config import SENTRY_DSN
@@ -30,6 +32,6 @@ def log_contract_signed(contract, by) -> None:
     """Record the signature of a contract."""
     sentry_sdk.capture_message(
         f"Contract {contract.id} signed for client {contract.client_id} "
-        f"by {by.employee_number} ",
+        f"by {by.employee_number}",
         level="info",
     )

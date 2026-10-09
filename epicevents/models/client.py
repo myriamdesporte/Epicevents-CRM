@@ -1,3 +1,5 @@
+"""The Client model."""
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import String, ForeignKey
@@ -11,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class Client(ModelBase):
-    """A client company contact, followed by a one sales collaborator."""
+    """A client company contact, followed by one sales collaborator."""
 
     __tablename__ = "clients"
 
@@ -27,7 +29,7 @@ class Client(ModelBase):
     sales_contact: Mapped["User"] = relationship(back_populates="managed_clients")
     contracts: Mapped[list["Contract"]] = relationship(back_populates="client")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"Client(id={self.id!r}, full_name={self.full_name!r}, "
             f"company_name={self.company_name!r})"

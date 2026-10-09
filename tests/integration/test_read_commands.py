@@ -144,7 +144,8 @@ def test_contract_list_unpaid_only(session, logged_in, runner, sales_user, clien
 def test_contract_list_mine_filters_by_client_sales_contact(
     session, logged_in, runner, sales_user, management_user
 ):
-    """--mine includes only contracts belonging to clients assigned to the current user."""
+    """--mine includes only contracts for clients assigned to the current user."""
+
     my_client = create_client(session, sales_user, full_name="Kevin Casey")
     other_client = create_client(session, management_user, full_name="Lou Bouzin")
 
@@ -190,7 +191,7 @@ def test_contract_list_with_unsigned_and_unpaid_filters(
 def test_event_list_without_support_only(
     session, logged_in, runner, sales_user, support_user, client
 ):
-    """--no-support includes events without a support user, but excludes assigned events."""
+    """--no-support includes events without a support user, excluding assigned ones."""
     assigned_contract = create_contract(session, client)
     create_event(session, assigned_contract, support_user, name="Assigned")
     create_event(session, create_contract(session, client), None, name="Orphan")

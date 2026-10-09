@@ -46,7 +46,8 @@ def main() -> None:
     with Session() as session:
         if session.scalar(select(User.id).limit(1)) is not None:
             sys.exit(
-                "A user already exists: create collaborators from the application instead."
+                "A user already exists: create collaborators from the "
+                "application instead."
             )
 
         role = session.scalar(select(Role).where(Role.name == RoleName.MANAGEMENT))

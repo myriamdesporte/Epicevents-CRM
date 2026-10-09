@@ -1,3 +1,5 @@
+"""The Contract model."""
+
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
@@ -29,8 +31,8 @@ class Contract(ModelBase):
 
     event: Mapped[Optional["Event"]] = relationship(back_populates="contract")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"Contract(id={self.id!r}, client_id={self.client_id!r}, "
-            f"total_amount={self.total_amount!r}, is_signed={self.is_signed!r}"
+            f"total_amount={self.total_amount!r}, is_signed={self.is_signed!r})"
         )
