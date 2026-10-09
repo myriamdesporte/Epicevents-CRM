@@ -6,11 +6,11 @@ from epicevents import database
 from epicevents.controllers.errors import handle_errors
 from epicevents.controllers.guards import requires
 from epicevents.controllers.options import ask, given
+from epicevents.exceptions import ValidationError
 from epicevents.permissions import Permission
 from epicevents.repositories import ContractRepository
 from epicevents.services import auth
 from epicevents.services import contract as contract_service
-from epicevents.validators import ValidationError
 from epicevents.views import client as client_view
 from epicevents.views import contract as contract_view
 
@@ -26,8 +26,7 @@ def contract() -> None:
 @click.option("--mine", is_flag=True, help="Only the contracts of your own clients.")
 @handle_errors
 def list_contracts(unsigned: bool, unpaid: bool, mine: bool) -> None:
-    """List the contracts."""
-
+    """List the contracts. Filters can be combined."""
     with database.Session() as session:
         current_user = auth.get_current_user(session)
         repository = ContractRepository(session)

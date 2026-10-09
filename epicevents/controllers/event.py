@@ -6,11 +6,12 @@ from epicevents import database
 from epicevents.controllers.errors import handle_errors
 from epicevents.controllers.guards import requires
 from epicevents.controllers.options import ask, given
+from epicevents.exceptions import ValidationError
 from epicevents.permissions import Permission
 from epicevents.repositories import EventRepository, UserRepository
 from epicevents.services import auth
 from epicevents.services import event as event_service
-from epicevents.validators import DATETIME_EXAMPLE, ValidationError
+from epicevents.validators import DATETIME_EXAMPLE
 from epicevents.views import contract as contract_view
 from epicevents.views import event as event_view
 from epicevents.views import user as user_view
@@ -28,8 +29,7 @@ def event() -> None:
 @click.option("--mine", is_flag=True, help="Only the events assigned to you.")
 @handle_errors
 def list_events(no_support: bool, mine: bool) -> None:
-    """List the events."""
-
+    """List the events. Filters can be combined."""
     with database.Session() as session:
         current_user = auth.get_current_user(session)
         repository = EventRepository(session)
@@ -80,18 +80,18 @@ def create_event(
         )
         contract_view.show_selected(contract)
 
-    created = event_service.create_event(
-        session,
-        current_user,
-        contract_id=contract.id,
-        name=ask(name, "Event name"),
-        start_date=ask(start, "Start"),
-        end_date=ask(end, "End"),
-        location=ask(location, "Location"),
-        attendees=ask(attendees, "Attendees"),
-        notes=notes,
-    )
-    event_view.show_saved(created)
+        created = event_service.create_event(
+            session,
+            current_user,
+            contract_id=contract.id,
+            name=ask(name, "Event name"),
+            start_date=ask(start, "Start"),
+            end_date=ask(end, "End"),
+            location=ask(location, "Location"),
+            attendees=ask(attendees, "Attendees"),
+            notes=notes,
+        )
+        event_view.show_saved(created)
 
 
 @event.command("update")
@@ -144,7 +144,7 @@ def update_event(
 
 
 @event.command("assign-support")
-@requires(Permission.EVENT_UPDATE)
+@requires(Permission.EVENT_ASSIGN_SUPPORT)
 @click.argument("event_id", type=int)
 @click.option("--user-id", type=int)
 @handle_errors

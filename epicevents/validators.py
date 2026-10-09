@@ -4,19 +4,25 @@ import re
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 
+from epicevents.exceptions import ValidationError
+
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+EMAIL_MAX = 255
 
 PHONE_PATTERN = re.compile(r"^[0-9+().\-\s]+$")
 MIN_PHONE_DIGITS = 6
+PHONE_MAX = 30
+
+AMOUNT_MAX = Decimal("99999999.99")
+AMOUNT_DECIMALS = 2
+
+MAX_ATTENDEES = 100_000
 
 MIN_PASSWORD_LENGTH = 12
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"
 DATETIME_EXAMPLE = "2026-06-04 13:00"
-
-
-class ValidationError(Exception):
-    """Raised when what the collaborator asked for cannot be accepted."""
 
 
 def validate_changes(changes: dict, validators: dict) -> dict:
@@ -52,6 +58,9 @@ def validate_email(value: str) -> str:
     if not cleaned:
         raise ValidationError("Email is required.")
 
+    if len(cleaned) > EMAIL_MAX:
+        raise ValidationError(f"Email is too long: {EMAIL_MAX} characters at most.")
+
     if not EMAIL_PATTERN.match(cleaned):
         raise ValidationError(f"'{cleaned}' is not a valid email address.")
 
@@ -64,6 +73,11 @@ def validate_phone(value: str) -> str:
 
     if not cleaned:
         raise ValidationError("Phone number is required.")
+
+    if len(cleaned) > PHONE_MAX:
+        raise ValidationError(
+            f"Phone number is too long: {PHONE_MAX} characters at most."
+        )
 
     if not PHONE_PATTERN.match(cleaned):
         raise ValidationError(
@@ -80,14 +94,25 @@ def validate_phone(value: str) -> str:
 
 
 def validate_amount(value, *, field: str) -> Decimal:
-    """Return the amount as a Decimal, refusing a negative or unreadable one."""
+    """Return the amount as a Decimal, refusing one the database could not store."""
     try:
         amount = Decimal(str(value).strip().replace(",", "."))
     except (InvalidOperation, AttributeError):
         raise ValidationError(f"{field} is not a valid amount: '{value}'.") from None
 
+    if not amount.is_finite():
+        raise ValidationError(f"{field} is not a valid amount: '{value}'.")
+
     if amount < 0:
         raise ValidationError(f"{field} cannot be negative.")
+
+    if amount > AMOUNT_MAX:
+        raise ValidationError(f"{field} cannot exceed {AMOUNT_MAX}.")
+
+    if amount.as_tuple().exponent < -AMOUNT_DECIMALS:
+        raise ValidationError(
+            f"{field} cannot have more than {AMOUNT_DECIMALS} decimals."
+        )
 
     return amount
 
@@ -116,6 +141,9 @@ def validate_attendees(value) -> int:
 
     if attendees <= 0:
         raise ValidationError("An event needs at least one attendee.")
+
+    if attendees > MAX_ATTENDEES:
+        raise ValidationError(f"The number of attendees cannot exceed {MAX_ATTENDEES}.")
 
     return attendees
 

@@ -5,8 +5,8 @@ from decimal import Decimal
 
 import pytest
 
+from epicevents.exceptions import ValidationError
 from epicevents.validators import (
-    ValidationError,
     validate_amount,
     validate_amount_due,
     validate_attendees,
@@ -79,6 +79,18 @@ def test_phone_with_letters_is_refused():
         validate_phone("call me")
 
 
+def test_phone_longer_than_the_column_is_refused():
+    """Refuses phone numbers longer than the 30 characters of the column."""
+    with pytest.raises(ValidationError, match="too long"):
+        validate_phone("0" * 31)
+
+
+def test_email_longer_than_the_column_is_refused():
+    """Refuses emails longer than the 255 characters of the column."""
+    with pytest.raises(ValidationError, match="too long"):
+        validate_email("a" * 250 + "@ee.fr")
+
+
 def test_phone_with_too_few_digits_is_refused():
     """Refuses phone numbers containing too few digits."""
     with pytest.raises(ValidationError, match="digits"):
@@ -115,6 +127,25 @@ def test_unreadable_amount_is_refused():
         validate_amount("beaucoup", field="Total amount")
 
 
+@pytest.mark.parametrize("wrong", ["NaN", "Infinity", "-Infinity"])
+def test_special_decimal_values_are_refused(wrong):
+    """Refuses what Decimal reads but is not an amount."""
+    with pytest.raises(ValidationError, match="not a valid amount"):
+        validate_amount(wrong, field="Total amount")
+
+
+def test_amount_above_the_column_limit_is_refused():
+    """Refuses amounts that would not fit in Numeric(10, 2)."""
+    with pytest.raises(ValidationError, match="cannot exceed"):
+        validate_amount("100000000", field="Total amount")
+
+
+def test_amount_with_more_than_two_decimals_is_refused():
+    """Refuses cents fractions rather than rounding them silently."""
+    with pytest.raises(ValidationError, match="2 decimals"):
+        validate_amount("12.345", field="Total amount")
+
+
 def test_amount_due_may_equal_the_total():
     """Accepts an unpaid contract where the amount due equals the total."""
     assert validate_amount_due("1000.00", "1000.00") == Decimal("1000.00")
@@ -141,6 +172,12 @@ def test_attendees_must_be_positive(wrong):
     """Refuses attendee counts below one."""
     with pytest.raises(ValidationError, match="at least one attendee"):
         validate_attendees(wrong)
+
+
+def test_too_many_attendees_is_refused():
+    """Refuses an attendee count beyond any plausible event."""
+    with pytest.raises(ValidationError, match="cannot exceed"):
+        validate_attendees("100001")
 
 
 def test_attendees_that_is_not_a_number_is_refused():

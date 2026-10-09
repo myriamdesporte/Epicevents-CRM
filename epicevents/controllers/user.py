@@ -6,11 +6,11 @@ from epicevents import database
 from epicevents.controllers.errors import handle_errors
 from epicevents.controllers.guards import requires
 from epicevents.controllers.options import given
+from epicevents.exceptions import ValidationError
 from epicevents.permissions import Permission
 from epicevents.repositories import UserRepository
 from epicevents.services import auth
 from epicevents.services import user as user_service
-from epicevents.validators import ValidationError
 from epicevents.views import user as user_view
 
 
@@ -26,6 +26,14 @@ def list_users() -> None:
     with database.Session() as session:
         auth.get_current_user(session)
         user_view.show_list(UserRepository(session).list_all())
+
+
+def _find(session, user_id: int):
+    """Return the collaborator, or explain that the id is unknown."""
+    found = UserRepository(session).get(user_id)
+    if found is None:
+        raise ValidationError(f"No collaborator has the id {user_id}.")
+    return found
 
 
 @user.command("create")
@@ -88,9 +96,7 @@ def update_user(
         raise click.UsageError("Nothing to update: give at least one option.")
 
     with database.Session() as session:
-        found = UserRepository(session).get(user_id)
-        if found is None:
-            raise ValidationError(f"No collaborator has the id {user_id}.")
+        found = _find(session, user_id)
 
         user_view.show_selected(found)
 
@@ -107,9 +113,7 @@ def update_user(
 def delete_user(user_id: int) -> None:
     """Delete a collaborator. Management only."""
     with database.Session() as session:
-        found = UserRepository(session).get(user_id)
-        if found is None:
-            raise ValidationError(f"No collaborator has the id {user_id}.")
+        found = _find(session, user_id)
 
         # Deleting is irreversible: show who it is then ask before doing it.
         user_view.show_selected(found)

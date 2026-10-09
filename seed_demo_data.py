@@ -7,13 +7,13 @@ import sys
 from sqlalchemy import select
 
 from epicevents.database import Session
-from epicevents.models import Client, Contract, Event, RoleName, User
+from epicevents.exceptions import AuthorizationError, ValidationError
+from epicevents.models import Client, Contract, Event, Role, RoleName, User
 from epicevents.services import client as client_service
 from epicevents.services import contract as contract_service
 from epicevents.services import event as event_service
 from epicevents.services import user as user_service
-from epicevents.services.auth import AuthorizationError
-from epicevents.validators import ValidationError, validate_password
+from epicevents.validators import validate_password
 
 COLLABORATORS = [
     ("DEMO-01", "Bill Boquet", "bill@epicevents.com", RoleName.SALES),
@@ -84,9 +84,12 @@ EVENTS = [
 
 
 def management_user(session):
-    """Return the management collaborator."""
+    """Return the oldest management collaborator, the one the script acts as."""
     user = session.scalars(
-        select(User).join(User.role).where(User.role.has(name=RoleName.MANAGEMENT))
+        select(User)
+        .join(User.role)
+        .where(Role.name == RoleName.MANAGEMENT)
+        .order_by(User.id)
     ).first()
 
     if user is None:
@@ -122,7 +125,11 @@ def already_filled(session) -> bool:
 
 
 def wipe(session, keep: User) -> None:
-    """Delete demonstration data while keeping the current collaborator."""
+    """Delete every client, contract, event and collaborator but one.
+
+    Only the collaborator running the script is kept: a demonstration base is
+    meant to be replayed from scratch.
+    """
     for model in (Event, Contract, Client):
         for row in session.scalars(select(model)):
             session.delete(row)
@@ -199,12 +206,30 @@ def seed(session, manager: User, password: str) -> None:
     print(f"{len(EVENTS)} events created.")
 
 
-def report(manager: User) -> None:
-    """Display the accounts created for the demonstration."""
+def report(session, manager: User) -> None:
+    """Display the accounts and the ids to use during the demonstration."""
     print("\nAccounts, all sharing the password you just typed:")
     print(f"  {manager.email:<28} management (yours, password unchanged)")
     for _, full_name, email, role in COLLABORATORS:
         print(f"  {email:<28} {role} -- {full_name}")
+
+    print("\nIds to use during the demonstration:")
+    for user in session.scalars(select(User).order_by(User.id)):
+        print(f"  collaborator {user.id:<4} {user.full_name}")
+    for client in session.scalars(select(Client).order_by(Client.id)):
+        print(
+            f"  client       {client.id:<4} {client.full_name} "
+            f"(sales: {client.sales_contact.full_name})"
+        )
+    for contract in session.scalars(select(Contract).order_by(Contract.id)):
+        state = "signed" if contract.is_signed else "NOT signed"
+        has_event = ", has an event" if contract.event is not None else ""
+        print(
+            f"  contract     {contract.id:<4} {contract.client.full_name}, "
+            f"{state}{has_event}"
+        )
+    for event in session.scalars(select(Event).order_by(Event.id)):
+        print(f"  event        {event.id:<4} {event.name}")
 
     print("\nStart with:")
     print("  python -m epicevents login")
@@ -235,7 +260,7 @@ def main() -> None:
         except (ValidationError, AuthorizationError) as error:
             sys.exit(f"Refused by the application: {error}")
 
-        report(manager)
+        report(session, manager)
 
 
 if __name__ == "__main__":

@@ -60,6 +60,13 @@ def test_events_are_updated_by_management_and_support():
     assert has_permission(RoleName.SALES, Permission.EVENT_UPDATE) is False
 
 
+def test_only_management_assigns_a_support_contact():
+    """Assigning a support contact is a management decision."""
+    assert has_permission(RoleName.MANAGEMENT, Permission.EVENT_ASSIGN_SUPPORT)
+    assert not has_permission(RoleName.SUPPORT, Permission.EVENT_ASSIGN_SUPPORT)
+    assert not has_permission(RoleName.SALES, Permission.EVENT_ASSIGN_SUPPORT)
+
+
 def test_support_only_updates_events():
     """Support has exactly one permission: updating events."""
     assert permissions_for(RoleName.SUPPORT) == frozenset({Permission.EVENT_UPDATE})

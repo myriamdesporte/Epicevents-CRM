@@ -4,8 +4,11 @@ import functools
 
 from sqlalchemy.exc import OperationalError
 
-from epicevents.services.auth import AuthenticationError, AuthorizationError
-from epicevents.validators import ValidationError
+from epicevents.exceptions import (
+    AuthenticationError,
+    AuthorizationError,
+    ValidationError,
+)
 from epicevents.views.console import print_error
 
 DATABASE_UNREACHABLE = (

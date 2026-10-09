@@ -20,6 +20,7 @@ class Permission(enum.StrEnum):
 
     EVENT_CREATE = "event_create"
     EVENT_UPDATE = "event_update"
+    EVENT_ASSIGN_SUPPORT = "event_assign_support"
 
 
 NO_PERMISSION: frozenset[Permission] = frozenset()
@@ -33,6 +34,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
             Permission.CONTRACT_CREATE,
             Permission.CONTRACT_UPDATE,
             Permission.EVENT_UPDATE,
+            Permission.EVENT_ASSIGN_SUPPORT,
         }
     ),
     RoleName.SALES: frozenset(

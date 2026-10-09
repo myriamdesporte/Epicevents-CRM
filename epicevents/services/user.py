@@ -1,12 +1,12 @@
 """Business rules about the collaborators."""
 
 from epicevents import monitoring
+from epicevents.exceptions import ValidationError
 from epicevents.permissions import Permission
 from epicevents.repositories import ClientRepository, RoleRepository, UserRepository
 from epicevents.security import hash_password
 from epicevents.services.auth import authorize
 from epicevents.validators import (
-    ValidationError,
     validate_changes,
     validate_email,
     validate_password,

@@ -1,8 +1,9 @@
 """Business rules about the clients."""
 
+from epicevents.exceptions import AuthorizationError
 from epicevents.permissions import Permission
 from epicevents.repositories import ClientRepository
-from epicevents.services.auth import AuthorizationError, authorize
+from epicevents.services.auth import authorize
 from epicevents.validators import (
     validate_changes,
     validate_email,

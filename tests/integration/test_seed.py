@@ -1,7 +1,9 @@
 """Tests for the demonstration dataset."""
 
+from sqlalchemy import select
+
 from epicevents.models import Client, Contract, Event, RoleName, User
-from seed_demo_data import CONTRACTS, EVENTS, already_filled, seed, wipe
+from seed_demo_data import CONTRACTS, EVENTS, already_filled, report, seed, wipe
 
 PASSWORD = "MyPasswordDemo42!"
 
@@ -61,3 +63,27 @@ def test_the_support_collaborators_are_support(session, management_user):
 
     assigned = [e.support_contact for e in session.query(Event) if e.support_contact]
     assert all(user.role.name == RoleName.SUPPORT for user in assigned)
+
+
+def test_a_reset_keeps_only_the_collaborator_running_it(
+    session, management_user, support_user
+):
+    """--reset starts again from scratch, keeping only the management account."""
+    seed(session, management_user, PASSWORD)
+
+    wipe(session, keep=management_user)
+
+    remaining = {user.id for user in session.scalars(select(User))}
+    assert remaining == {management_user.id}
+
+
+def test_the_report_lists_the_ids_to_use(session, management_user, capsys):
+    """The ids are printed, since they are not always the same."""
+    seed(session, management_user, PASSWORD)
+
+    report(session, management_user)
+
+    output = capsys.readouterr().out
+    assert "client" in output and "Kevin Casey" in output
+    assert "NOT signed" in output
+    assert "has an event" in output

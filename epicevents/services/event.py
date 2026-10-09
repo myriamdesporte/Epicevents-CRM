@@ -1,11 +1,11 @@
 """Business rules about the events."""
 
+from epicevents.exceptions import AuthorizationError, ValidationError
 from epicevents.models import RoleName
 from epicevents.permissions import Permission
 from epicevents.repositories import ContractRepository, EventRepository
-from epicevents.services.auth import AuthorizationError, authorize
+from epicevents.services.auth import authorize
 from epicevents.validators import (
-    ValidationError,
     validate_attendees,
     validate_changes,
     validate_date_range,
@@ -99,12 +99,7 @@ def create_event(
 
 def assign_support(session, current_user, event, support_user):
     """Assign a support collaborator to an event. Management only."""
-    authorize(current_user, Permission.EVENT_UPDATE)
-
-    if current_user.role.name != RoleName.MANAGEMENT:
-        raise AuthorizationError(
-            "Only the management department assigns a support contact."
-        )
+    authorize(current_user, Permission.EVENT_ASSIGN_SUPPORT)
 
     if support_user.role.name != RoleName.SUPPORT:
         raise ValidationError(
@@ -119,7 +114,7 @@ def _moved_to_contract(session, current_user, event, contract_id) -> int:
     """Return the id of the contract an event is being moved to."""
     if current_user.role.name != RoleName.MANAGEMENT:
         raise AuthorizationError(
-            "Only the management department can move an event to another " "contract."
+            "Only the management department can move an event to another contract."
         )
 
     contract = ContractRepository(session).get(contract_id)

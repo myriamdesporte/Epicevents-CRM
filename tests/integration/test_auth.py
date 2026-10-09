@@ -6,12 +6,14 @@ import jwt
 import pytest
 
 from epicevents.services import auth
-from epicevents.services.auth import (
+from epicevents.exceptions import (
     AuthenticationError,
     AuthorizationError,
     InvalidCredentialsError,
     InvalidTokenError,
     TokenExpiredError,
+)
+from epicevents.services.auth import (
     authenticate,
     authorize,
     clear_token,
@@ -32,6 +34,13 @@ from tests.conftest import PASSWORD
 def test_authenticate_returns_the_collaborator(session, sales_user):
     """The right email/password pair returns the matching collaborator."""
     assert authenticate(session, sales_user.email, PASSWORD) is sales_user
+
+
+def test_authenticate_ignores_the_case_of_the_email(session, sales_user):
+    """Emails are stored lowercased: typing capitals must not lock anyone out."""
+    user = authenticate(session, f"  {sales_user.email.upper()} ", PASSWORD)
+
+    assert user.id == sales_user.id
 
 
 def test_authenticate_rejects_a_wrong_password(session, sales_user):
@@ -164,8 +173,7 @@ def test_login_upgrades_an_outdated_hash(session, sales_user, monkeypatch):
 
 
 def test_session_of_a_deleted_collaborator_is_refused(session, sales_user):
-    """A collaborator removed by management must lose access immediately, even
-    though their token is still within its validity period."""
+    """A deleted collaborator loses access at once, even with a valid token."""
     login(session, sales_user.email, PASSWORD)
 
     session.delete(sales_user)

@@ -6,11 +6,11 @@ from epicevents import database
 from epicevents.controllers.errors import handle_errors
 from epicevents.controllers.guards import requires
 from epicevents.controllers.options import given
+from epicevents.exceptions import ValidationError
 from epicevents.permissions import Permission
 from epicevents.repositories import ClientRepository
 from epicevents.services import auth
 from epicevents.services import client as client_service
-from epicevents.validators import ValidationError
 from epicevents.views import client as client_view
 
 
@@ -37,6 +37,14 @@ def list_clients(mine: bool) -> None:
             clients = repository.list_all()
 
         client_view.show_list(clients)
+
+
+def _find(session, client_id: int):
+    """Return the client, or explain that the id is unknown."""
+    found = ClientRepository(session).get(client_id)
+    if found is None:
+        raise ValidationError(f"No client has the id {client_id}.")
+    return found
 
 
 @client.command("create")
@@ -87,9 +95,7 @@ def update_client(
         raise click.UsageError("Nothing to update: give at least one option.")
 
     with database.Session() as session:
-        found = ClientRepository(session).get(client_id)
-        if found is None:
-            raise ValidationError(f"No client has the id {client_id}.")
+        found = _find(session, client_id)
 
         client_view.show_selected(found)
 
@@ -106,9 +112,4 @@ def show_client(client_id: int) -> None:
     """Show every field of one client."""
     with database.Session() as session:
         auth.get_current_user(session)
-
-        found = ClientRepository(session).get(client_id)
-        if found is None:
-            raise ValidationError(f"No client has the id {client_id}.")
-
-        client_view.show_details(found)
+        client_view.show_details(_find(session, client_id))

@@ -4,6 +4,7 @@ import click
 
 from epicevents import database
 from epicevents.controllers.errors import handle_errors
+from epicevents.exceptions import AuthenticationError
 from epicevents.permissions import Permission, permissions_for
 from epicevents.services import auth
 from epicevents.views.console import (
@@ -27,8 +28,8 @@ EDITABLE = {
     ],
     "event": [
         ("--name", "Name"),
-        ("--start", "Start"),
-        ("--end", "End"),
+        ("--start", "Start (YYYY-MM-DD HH:MM)"),
+        ("--end", "End (YYYY-MM-DD HH:MM)"),
         ("--location", "Location"),
         ("--attendees", "Attendees"),
         ("--notes", "Notes"),
@@ -55,6 +56,7 @@ ACTIONS = {
         ("List every contract", ["contract", "list"], None),
         ("List the unsigned ones", ["contract", "list", "--unsigned"], None),
         ("List those still owing money", ["contract", "list", "--unpaid"], None),
+        ("List the contracts of my clients", ["contract", "list", "--mine"], None),
         ("Show one contract", ["contract", "show", "<id>"], None),
         ("Create a contract", ["contract", "create"], Permission.CONTRACT_CREATE),
         (
@@ -74,7 +76,7 @@ ACTIONS = {
         (
             "Assign a support collaborator",
             ["event", "assign-support", "<id>"],
-            Permission.EVENT_UPDATE,
+            Permission.EVENT_ASSIGN_SUPPORT,
         ),
     ],
     "Collaborators": [
@@ -175,7 +177,7 @@ def current_session():
     with database.Session() as session:
         try:
             user = auth.get_current_user(session)
-        except auth.AuthenticationError:
+        except AuthenticationError:
             return None
 
         return (

@@ -1,5 +1,4 @@
-"""Read the options a collaborator typed for an update command
-or ask for the missing ones."""
+"""Read the options a collaborator typed and ask for the missing ones."""
 
 import click
 

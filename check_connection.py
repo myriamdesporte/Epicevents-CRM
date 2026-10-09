@@ -1,6 +1,11 @@
 """Check that the application can reach the database."""
 
+import sys
+
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
+
+from epicevents.controllers.errors import DATABASE_UNREACHABLE
 from epicevents.database import engine
 
 
@@ -14,4 +19,7 @@ def check_connection():
 
 
 if __name__ == "__main__":
-    check_connection()
+    try:
+        check_connection()
+    except OperationalError:
+        sys.exit(DATABASE_UNREACHABLE)

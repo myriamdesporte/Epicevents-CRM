@@ -1,12 +1,12 @@
 """Business rules about the contracts."""
 
 from epicevents import monitoring
+from epicevents.exceptions import AuthorizationError, ValidationError
 from epicevents.models import RoleName
 from epicevents.permissions import Permission
 from epicevents.repositories import ClientRepository, ContractRepository
-from epicevents.services.auth import AuthorizationError, authorize
+from epicevents.services.auth import authorize
 from epicevents.validators import (
-    ValidationError,
     validate_amount,
     validate_amount_due,
 )
@@ -45,19 +45,23 @@ def create_contract(
 
     total = validate_amount(total_amount, field="Total amount")
 
-    return ContractRepository(session).add(
+    created = ContractRepository(session).add(
         client_id=client.id,
         total_amount=total,
         amount_due=validate_amount_due(amount_due, total),
         is_signed=bool(is_signed),
     )
+    # A contract created already signed is a signature too: it is logged.
+    if created.is_signed:
+        monitoring.log_contract_signed(created, current_user)
+    return created
 
 
 def _moved_to_client(session, current_user, client_id) -> int:
     """Return the id of the client a contract is being moved to."""
     if current_user.role.name != RoleName.MANAGEMENT:
         raise AuthorizationError(
-            "Only the management department can move a contract to another " "client."
+            "Only the management department can move a contract to another client."
         )
 
     client = ClientRepository(session).get(client_id)
@@ -88,13 +92,20 @@ def update_contract(session, current_user, contract, **changes):
 
     if "is_signed" in changes:
         validated["is_signed"] = bool(changes["is_signed"])
+        if contract.is_signed and not validated["is_signed"]:
+            raise ValidationError("A signed contract cannot be unsigned.")
 
     if "client_id" in changes:
         validated["client_id"] = _moved_to_client(
             session, current_user, changes["client_id"]
         )
 
-    return ContractRepository(session).update(contract, **validated)
+    newly_signed = validated.get("is_signed") and not contract.is_signed
+
+    updated = ContractRepository(session).update(contract, **validated)
+    if newly_signed:
+        monitoring.log_contract_signed(updated, current_user)
+    return updated
 
 
 def sign_contract(session, current_user, contract):

@@ -6,17 +6,17 @@ import sys
 from sqlalchemy import select
 
 from epicevents.database import Session
+from epicevents.exceptions import ValidationError
 from epicevents.models import Role, RoleName, User
 from epicevents.validators import (
-    ValidationError,
+    validate_email,
     validate_password,
     validate_required_text,
-    validate_email,
 )
 
 
 def prompt(label: str, validate) -> str:
-    """Ask for a value until the validators accepts it."""
+    """Ask for a value until the validator accepts it."""
 
     while True:
         try:
@@ -35,7 +35,7 @@ def prompt_password() -> str:
             continue
 
         if password != getpass.getpass("Confirm password: "):
-            print("Passwords do not match")
+            print("Passwords do not match.")
             continue
 
         return password
@@ -52,7 +52,7 @@ def main() -> None:
 
         role = session.scalar(select(Role).where(Role.name == RoleName.MANAGEMENT))
         if role is None:
-            sys.exit("Roles are missing: run 'python init_db.py first.")
+            sys.exit("Roles are missing: run 'python init_db.py' first.")
 
         user = User(
             employee_number=prompt(

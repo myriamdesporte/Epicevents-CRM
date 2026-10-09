@@ -9,10 +9,10 @@ from sqlalchemy.orm import Session as SessionType
 from epicevents.config import JWT_SECRET
 from epicevents.exceptions import (
     AuthenticationError,
-    TokenExpiredError,
-    InvalidTokenError,
-    InvalidCredentialsError,
     AuthorizationError,
+    InvalidCredentialsError,
+    InvalidTokenError,
+    TokenExpiredError,
 )
 from epicevents.models import User
 from epicevents.permissions import Permission, has_permission
@@ -49,9 +49,11 @@ def _secret() -> str:
 
 def authenticate(session: SessionType, email: str, password: str) -> User:
     """Return the collaborator matching an email and password pair.
-    Raises InvalidCredentialsError if either is wrong.
+
+    Raises InvalidCredentialsError if either is wrong. The email is compared
+    lowercased, as it is stored.
     """
-    user = UserRepository(session).get_by_email(email)
+    user = UserRepository(session).get_by_email((email or "").strip().lower())
 
     if user is None:
         hash_password(password)
@@ -76,6 +78,7 @@ def create_token(user: User) -> str:
 
 def read_token(token: str) -> int:
     """Return the collaborator id carried by a valid token.
+
     Raises TokenExpiredError or InvalidTokenError otherwise.
     """
     try:

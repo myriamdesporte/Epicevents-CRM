@@ -19,3 +19,7 @@ class InvalidTokenError(AuthenticationError):
 
 class AuthorizationError(Exception):
     """Raised when an identified collaborator lacks the required permission."""
+
+
+class ValidationError(Exception):
+    """Raised when what the collaborator asked for cannot be accepted."""
