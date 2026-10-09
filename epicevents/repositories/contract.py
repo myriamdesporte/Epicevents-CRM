@@ -17,34 +17,16 @@ class ContractRepository(BaseRepository):
         selectinload(Contract.client).selectinload(Client.sales_contact),
     )
 
-    def list_unsigned(self):
-        """Return the contracts not signed yet."""
-        query = self._select().where(Contract.is_signed.is_(False))
-        return list(self.session.scalars(query.order_by(Contract.id)))
-
-    def list_not_fully_paid(self):
-        """Return the contracts still owing money."""
-        query = self._select().where(Contract.amount_due > 0)
-        return list(self.session.scalars(query.order_by(Contract.id)))
-
-    def list_for_sales_contact(self, user_id: int):
-        """Return the contracts of the clients a collaborator is responsible for."""
-        query = (
-            self._select()
-            .join(Client)
-            .where(Client.sales_contact_id == user_id)
-            .order_by(Contract.id)
-        )
-        return list(self.session.scalars(query))
-
     def list_filtered(
         self,
         *,
         unsigned: bool = False,
         unpaid: bool = False,
-        sales_contact_id: int | None = None
+        sales_contact_id: int | None = None,
     ):
-        """Return the contracts matching all the given criteria at once."""
+        """Return the contracts matching all the given criteria, oldest first.
+        With no criterion, every contract is returned.
+        """
         query = self._select()
 
         if unsigned:
@@ -56,4 +38,4 @@ class ContractRepository(BaseRepository):
                 Client.sales_contact_id == sales_contact_id
             )
 
-        return list(self.session.scalars(query))
+        return list(self.session.scalars(query.order_by(Contract.id)))

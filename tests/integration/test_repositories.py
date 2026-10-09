@@ -77,35 +77,58 @@ def test_client_carries_its_sales_contact(session, client, sales_user):
 
 
 def test_list_unsigned_contracts(session, client):
-    """list_unsigned returns only contracts that are not yet signed."""
+    """The unsigned filter keeps only contracts that are not yet signed."""
     create_contract(session, client, signed=True)
     unsigned = create_contract(session, client, signed=False)
 
-    contracts = ContractRepository(session).list_unsigned()
+    contracts = ContractRepository(session).list_filtered(unsigned=True)
 
     assert [contract.id for contract in contracts] == [unsigned.id]
 
 
 def test_list_contracts_not_fully_paid(session, client):
-    """list_not_fully_paid returns only contracts with a remaining amount due."""
+    """The unpaid filters keeps only contracts with a remaining amount due."""
     create_contract(session, client, due=Decimal("0.00"))
     owing = create_contract(session, client, due=Decimal("250.00"))
 
-    contracts = ContractRepository(session).list_not_fully_paid()
+    contracts = ContractRepository(session).list_filtered(unpaid=True)
 
     assert [contract.id for contract in contracts] == [owing.id]
 
 
 def test_list_contracts_of_one_sales_contact(session, sales_user, management_user):
-    """list_for_sales_contact returns contracts for clients assigned to that contact."""
+    """The sales contact filter keeps only that collaborator's clients contracts."""
     my_client = create_client(session, sales_user, full_name="Kevin Casey")
     other_client = create_client(session, management_user, full_name="Lou Bouzin")
     mine = create_contract(session, my_client)
     create_contract(session, other_client)
 
-    contracts = ContractRepository(session).list_for_sales_contact(sales_user.id)
+    contracts = ContractRepository(session).list_filtered(
+        sales_contact_id=sales_user.id
+    )
 
     assert [contract.id for contract in contracts] == [mine.id]
+
+
+def test_contract_filters_combine(session, client):
+    """Apply all contract filters together."""
+    create_contract(session, client, signed=True, due=Decimal("250.00"))
+    create_contract(session, client, signed=False, due=Decimal("0.00"))
+    both = create_contract(session, client, signed=False, due=Decimal("250.00"))
+
+    contracts = ContractRepository(session).list_filtered(unsigned=True, unpaid=True)
+
+    assert [contract.id for contract in contracts] == [both.id]
+
+
+def test_contracts_without_filter_are_all_listed_oldest_first(session, client):
+    """List all contracts in ascending ID order when no filters are applied."""
+    first = create_contract(session, client)
+    second = create_contract(session, client)
+
+    contracts = ContractRepository(session).list_filtered()
+
+    assert [contract.id for contract in contracts] == [first.id, second.id]
 
 
 def test_contract_reaches_the_sales_contact_through_its_client(
@@ -123,23 +146,23 @@ def test_contract_reaches_the_sales_contact_through_its_client(
 
 
 def test_list_events_without_support(session, client, support_user):
-    """list_without_support returns only events with no support contact."""
+    """The no_support filters keeps only events with no support contact."""
     assigned_contract = create_contract(session, client)
     orphan_contract = create_contract(session, client)
     create_event(session, assigned_contract, support_user, name="Assigned")
     orphan = create_event(session, orphan_contract, None, name="Orphan")
 
-    events = EventRepository(session).list_without_support()
+    events = EventRepository(session).list_filtered(no_support=True)
 
     assert [event.id for event in events] == [orphan.id]
 
 
 def test_list_events_of_one_support_contact(session, client, support_user):
-    """list_for_support_contact returns only that support contact's events."""
+    """The support contact filters keeps only that collaborator's events."""
     mine = create_event(session, create_contract(session, client), support_user)
     create_event(session, create_contract(session, client), None, name="Orphan")
 
-    events = EventRepository(session).list_for_support_contact(support_user.id)
+    events = EventRepository(session).list_filtered(support_contact_id=support_user.id)
 
     assert [event.id for event in events] == [mine.id]
 
