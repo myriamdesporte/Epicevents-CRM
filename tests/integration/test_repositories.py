@@ -97,7 +97,7 @@ def test_list_contracts_not_fully_paid(session, client):
 
 
 def test_list_contracts_of_one_sales_contact(session, sales_user, management_user):
-    """list_for_sales_contact returns only contracts whose client belongs to that sales contact."""
+    """list_for_sales_contact returns contracts for clients assigned to that contact."""
     my_client = create_client(session, sales_user, full_name="Kevin Casey")
     other_client = create_client(session, management_user, full_name="Lou Bouzin")
     mine = create_contract(session, my_client)

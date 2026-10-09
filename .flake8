@@ -1,7 +1,10 @@
 [flake8]
 max-line-length = 88
-
+# E203: black writes "payload[middle + 1 :]" with a space before the colon which flake8 flags
+extend-ignore = E203
 exclude =
     venv,
     .venv,
     __pycache__,
+format = html
+htmldir = flake8_report

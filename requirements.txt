@@ -11,6 +11,7 @@ sentry-sdk==2.70.0
 # Dev tools
 black==26.5.1
 flake8==7.3.0
+flake8-html==0.4.3
 pytest==9.1.1
 pytest-cov==7.1.0
 coverage==7.15.4

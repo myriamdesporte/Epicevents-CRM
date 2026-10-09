@@ -1,3 +1,5 @@
+"""The User model: a collaborator of Epic Events."""
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import String, ForeignKey

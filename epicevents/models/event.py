@@ -1,3 +1,5 @@
+"""The Event model."""
+
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -28,7 +30,7 @@ class Event(ModelBase):
     # Foreign key to the contract: one contract has at most one event
     contract_id: Mapped[int] = mapped_column(ForeignKey("contracts.id"), unique=True)
 
-    # Foreign key to the support collaborator: optional (an event may have no support yet)
+    # Optional foreign key to the support collaborator
     support_contact_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
 
     # Relationships
@@ -37,8 +39,8 @@ class Event(ModelBase):
         back_populates="assigned_events"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"Event(id={self.id!r}, name={self.name!r}, "
-            f"contract_id={self.contract_id!r}"
+            f"contract_id={self.contract_id!r})"
         )
