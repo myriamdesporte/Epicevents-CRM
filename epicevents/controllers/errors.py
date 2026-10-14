@@ -2,11 +2,12 @@
 
 import functools
 
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, StatementError
 
 from epicevents.exceptions import (
     AuthenticationError,
     AuthorizationError,
+    ConfigurationError,
     ValidationError,
 )
 from epicevents.views.console import print_error
@@ -24,11 +25,22 @@ def handle_errors(command):
     def wrapper(*args, **kwargs):
         try:
             return command(*args, **kwargs)
-        except (AuthenticationError, AuthorizationError, ValidationError) as error:
+        except (
+            AuthenticationError,
+            AuthorizationError,
+            ValidationError,
+            ConfigurationError,
+        ) as error:
             print_error(str(error))
             raise SystemExit(1)
         except OperationalError:
             print_error(DATABASE_UNREACHABLE)
             raise SystemExit(1)
+        except StatementError as error:
+            # SQLAlchemy wraps an error raised while encrypting a searched value
+            if isinstance(error.orig, ConfigurationError):
+                print_error(str(error.orig))
+                raise SystemExit(1)
+            raise
 
     return wrapper

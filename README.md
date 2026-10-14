@@ -71,9 +71,17 @@ Les variables attendues dans `.env` :
 | `DB_HOST`                 | Hôte de la base (`localhost`)                                       |
 | `DB_PORT`                 | Hôte de la base (`5433`)                                            |
 | `DB_NAME`                 | Nom de la base (`epicevents`)                                       |
+| `ENCRYPTION_KEY`          | Clé de chiffrement des données personnelles en base                 |
 | `JWT_SECRET`              | Secret de signature des jetons de session (32 caractères minimum)   |
 | `SENTRY_DSN`              | Adresse d'envoi des rapports Sentry (facultative)                   |
 
+
+
+Pour générer la clé de chiffrement `ENCRYPTION_KEY` :
+
+```bash
+python -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(64)).decode())"
+```
 
 Pour générer une clé secrète ou un jeton aléatoire :
 

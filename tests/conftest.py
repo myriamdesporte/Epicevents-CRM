@@ -1,5 +1,6 @@
 """Fixtures shared by the test suite."""
 
+import base64
 from datetime import timezone, datetime
 from decimal import Decimal
 
@@ -7,12 +8,15 @@ import pytest
 from sqlalchemy import create_engine, select, event
 from sqlalchemy.orm import sessionmaker
 
-from epicevents import database
+from epicevents import config, database
 from epicevents.services import auth
 from epicevents.database import Base
 from epicevents.models import Role, RoleName, User, Contract, Event, Client
 
 PASSWORD = "DummyPassword42!"
+
+# 64 bytes encoded in base64, the format AES-SIV expects: a fake key for tests.
+TEST_ENCRYPTION_KEY = base64.urlsafe_b64encode(b"k" * 64).decode()
 
 
 @pytest.fixture
@@ -157,6 +161,12 @@ def signed_contract(session, client):
 def test_secret(monkeypatch):
     """Sign the test tokens with a throwaway secret, never the real one."""
     monkeypatch.setattr(auth, "JWT_SECRET", "fake-jwt-secret-for-testing-purposes-only")
+
+
+@pytest.fixture(autouse=True)
+def test_encryption_key(monkeypatch):
+    """Encrypt the test data with a throwaway key, never the real one."""
+    monkeypatch.setattr(config, "ENCRYPTION_KEY", TEST_ENCRYPTION_KEY)
 
 
 @pytest.fixture(autouse=True)

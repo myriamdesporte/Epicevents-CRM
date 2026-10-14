@@ -16,6 +16,8 @@ DATABASE_URL = (
     f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
+ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
+
 JWT_SECRET = os.getenv("JWT_SECRET")
 
 SENTRY_DSN = os.getenv("SENTRY_DSN")

@@ -6,6 +6,7 @@ from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from epicevents.models.base import ModelBase
+from epicevents.models.encrypted import EncryptedString
 from epicevents.security import hash_password, verify_password
 
 if TYPE_CHECKING:
@@ -20,8 +21,9 @@ class User(ModelBase):
     __tablename__ = "users"
 
     employee_number: Mapped[str] = mapped_column(String(20), unique=True)
-    full_name: Mapped[str] = mapped_column(String(100))
-    email: Mapped[str] = mapped_column(String(255), unique=True)
+    # Encrypted in the database; lengths checked by the validators
+    full_name: Mapped[str] = mapped_column(EncryptedString)
+    email: Mapped[str] = mapped_column(EncryptedString, unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
 
     # Foreign key

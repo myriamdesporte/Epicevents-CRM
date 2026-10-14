@@ -3,10 +3,11 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import ForeignKey, String, DateTime, Integer, Text
+from sqlalchemy import ForeignKey, DateTime, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from epicevents.models.base import ModelBase
+from epicevents.models.encrypted import EncryptedString
 
 if TYPE_CHECKING:
     from epicevents.models.contract import Contract
@@ -18,14 +19,15 @@ class Event(ModelBase):
 
     __tablename__ = "events"
 
-    name: Mapped[str] = mapped_column(String(150))
+    # Encrypted in the database; lengths are checked by the validators
+    name: Mapped[str] = mapped_column(EncryptedString)
 
     start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
-    location: Mapped[str] = mapped_column(String(255))
+    location: Mapped[str] = mapped_column(EncryptedString)
     attendees: Mapped[int] = mapped_column(Integer)
-    notes: Mapped[Optional[str]] = mapped_column(Text)
+    notes: Mapped[Optional[str]] = mapped_column(EncryptedString)
 
     # Foreign key to the contract: one contract has at most one event
     contract_id: Mapped[int] = mapped_column(ForeignKey("contracts.id"), unique=True)

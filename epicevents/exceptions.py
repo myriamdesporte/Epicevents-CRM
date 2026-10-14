@@ -23,3 +23,7 @@ class AuthorizationError(Exception):
 
 class ValidationError(Exception):
     """Raised when what the collaborator asked for cannot be accepted."""
+
+
+class ConfigurationError(Exception):
+    """Raised when a setting of the .env file is missing or wrong."""
